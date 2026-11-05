@@ -720,3 +720,10 @@ body.is-ready .pole-rail { opacity: 1; }
 @media (max-width: 860px) { .hours-grid { grid-template-columns: 1fr; } }
 @media (max-width: 480px) { .hours-row { grid-template-columns: 1fr auto; gap: 4px 12px; } .hours-time { grid-column: 1; font-size: 14px; } .hours-today { grid-column: 2; grid-row: 1 / span 2; } }
 @media (prefers-reduced-motion: reduce) { .open-dot, .open-dot::after { animation: none !important; } }
+
+/* aviso al abrir la reserva */
+.book-toast { position: fixed; left: 50%; bottom: 28px; z-index: 400; translate: -50% 20px; opacity: 0; pointer-events: none;
+  display: flex; align-items: center; gap: 12px; padding: 14px 22px; background: #fff; color: #000; font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+  transition: opacity .4s, translate .5s var(--ease); }
+.book-toast img { filter: invert(1); }
+.book-toast.is-on { opacity: 1; translate: -50% 0; }

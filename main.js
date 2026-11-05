@@ -897,35 +897,20 @@
     })(last);
   }
 
-  /* ---------- Reserva integrada (Yeasy dentro de la web) ---------- */
-  const book = document.getElementById("book");
-  const frame = book.querySelector("iframe");
-  const bookBody = book.querySelector(".book-body");
-  let lastFocus = null;
-  const openBook = () => {
-    lastFocus = document.activeElement;
-    if (!frame.getAttribute("src")) {
-      frame.addEventListener("load", () => bookBody.classList.add("is-loaded"), { once: true });
-      frame.setAttribute("src", frame.dataset.src);
-    }
-    book.hidden = false;
-    requestAnimationFrame(() => requestAnimationFrame(() => book.classList.add("is-open")));
-    body.style.overflow = "hidden";
-    book.querySelector(".book-close").focus({ preventScroll: true });
-  };
-  const closeBook = () => {
-    book.classList.remove("is-open");
-    body.style.overflow = "";
-    setTimeout(() => { book.hidden = true; }, 700);
-    if (lastFocus) lastFocus.focus({ preventScroll: true });
-  };
-  document.querySelectorAll(".js-book").forEach(a => a.addEventListener("click", e => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; // dejar abrir en pestaña nueva
-    e.preventDefault();
-    openBook();
-  }));
-  book.querySelectorAll("[data-close]").forEach(el => el.addEventListener("click", closeBook));
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && !book.hidden) closeBook(); });
+  /* ---------- Reserva: Yeasy no deja incrustarse, así que se abre en pestaña nueva ---------- */
+  const toast = document.createElement("div");
+  toast.className = "book-toast";
+  toast.setAttribute("role", "status");
+  toast.innerHTML = '<img src="assets/logo.svg" alt="" width="22" height="22"><span>Abriendo la reserva online…</span>';
+  document.body.appendChild(toast);
+  let toastT;
+  document.querySelectorAll(".js-book").forEach(a => {
+    a.setAttribute("target", "_blank"); a.setAttribute("rel", "noopener");
+    a.addEventListener("click", () => {
+      toast.classList.add("is-on"); clearTimeout(toastT);
+      toastT = setTimeout(() => toast.classList.remove("is-on"), 2200);
+    });
+  });
 
   document.getElementById("year").textContent = new Date().getFullYear();
 
