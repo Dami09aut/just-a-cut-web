@@ -928,4 +928,51 @@
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !book.hidden) closeBook(); });
 
   document.getElementById("year").textContent = new Date().getFullYear();
+
+  /* ---------- Horario: abierto ahora / cerrado (hora de Canarias) ---------- */
+  (function openStatus() {
+    // 0 = domingo … 6 = sábado; tramos en minutos desde medianoche
+    const H = {
+      0: [],
+      1: [[600, 840], [960, 1200]],
+      2: [[600, 900]],
+      3: [[600, 840], [960, 1200]],
+      4: [[660, 1080]],
+      5: [[600, 1080]],
+      6: [[570, 840]],
+    };
+    const DAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+    const fmt = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+    function now() {
+      const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Atlantic/Canary", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
+      const get = t => parts.find(p => p.type === t).value;
+      const day = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(get("weekday"));
+      return { day, min: +get("hour") * 60 + +get("minute") };
+    }
+    function update() {
+      const { day, min } = now();
+      const slot = H[day].find(([a, b]) => min >= a && min < b);
+      let text, open = !!slot;
+      if (slot) {
+        text = `<strong>Abierto ahora</strong> · cierra a las ${fmt(slot[1])}`;
+      } else {
+        const later = H[day].find(([a]) => a > min);
+        if (later) text = `<strong>Cerrado</strong> · abre hoy a las ${fmt(later[0])}`;
+        else {
+          for (let i = 1; i <= 7; i++) {
+            const d = (day + i) % 7;
+            if (H[d].length) { text = `<strong>Cerrado</strong> · abre ${i === 1 ? "mañana" : "el " + DAYS[d]} a las ${fmt(H[d][0][0])}`; break; }
+          }
+        }
+      }
+      document.querySelectorAll("[data-open-status]").forEach(el => {
+        el.classList.toggle("is-open", open);
+        el.classList.toggle("is-closed", !open);
+        el.querySelector(".open-text").innerHTML = text;
+      });
+      document.querySelectorAll(".hours-row").forEach(r => r.classList.toggle("is-today", +r.dataset.day === day));
+    }
+    update();
+    setInterval(update, 30000);
+  })();
 })();

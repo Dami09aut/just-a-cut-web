@@ -691,3 +691,32 @@ body.is-ready .pole-rail { opacity: 1; }
 .review figcaption strong { font-weight: 600; font-size: 16px; }
 .review figcaption span { color: var(--muted); font-size: 13px; }
 @media (prefers-reduced-motion: reduce) { .reviews-track { animation: none; } .reviews-viewport { overflow-x: auto; } .stars svg { animation: none; } }
+
+/* ---------- Abierto / cerrado ---------- */
+.open-status { display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px 9px 13px; margin-bottom: 26px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; background: rgba(0,0,0,.45); backdrop-filter: blur(6px); }
+.open-status strong { font-weight: 600; }
+.open-status .open-text { color: #ddd; }
+.open-dot { position: relative; width: 9px; height: 9px; border-radius: 50%; background: #666; flex: none; }
+.open-status.is-open { border-color: rgba(52, 211, 107, .45); }
+.open-status.is-open .open-dot { background: #2ee06f; box-shadow: 0 0 10px #2ee06f; animation: openBlink 1.4s ease-in-out infinite; }
+.open-status.is-open .open-dot::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid #2ee06f; animation: openPing 1.4s ease-out infinite; }
+.open-status.is-closed .open-dot { background: #e5484d; box-shadow: 0 0 8px rgba(229,72,77,.6); }
+@keyframes openBlink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes openPing { 0% { transform: scale(.6); opacity: .9; } 100% { transform: scale(1.9); opacity: 0; } }
+.open-status-lg { margin: 28px 0 24px; font-size: 13px; }
+
+/* ---------- Horario ---------- */
+.hours-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: clamp(32px, 6vw, 96px); align-items: center; }
+.hours-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.hours-row { display: grid; grid-template-columns: 140px 1fr auto; align-items: center; gap: 16px; padding: 22px 8px; border-bottom: 1px solid var(--line); transition: background .4s; }
+.hours-day { font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: 22px; letter-spacing: .03em; }
+.hours-time { color: #cfcfcf; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.hours-row.is-closed .hours-day, .hours-row.is-closed .hours-time { color: var(--muted); }
+.hours-row.is-closed .hours-time { text-transform: uppercase; font-size: 13px; letter-spacing: .2em; }
+.hours-today { display: none; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; background: #fff; color: #000; padding: 6px 12px; border-radius: 999px; }
+.hours-row.is-today { background: rgba(255,255,255,.04); }
+.hours-row.is-today .hours-today { display: inline-block; }
+.hours-row.is-today .hours-time { color: #fff; }
+@media (max-width: 860px) { .hours-grid { grid-template-columns: 1fr; } }
+@media (max-width: 480px) { .hours-row { grid-template-columns: 1fr auto; gap: 4px 12px; } .hours-time { grid-column: 1; font-size: 14px; } .hours-today { grid-column: 2; grid-row: 1 / span 2; } }
+@media (prefers-reduced-motion: reduce) { .open-dot, .open-dot::after { animation: none !important; } }
