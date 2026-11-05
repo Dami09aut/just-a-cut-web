@@ -915,11 +915,13 @@
     toggle.setAttribute("aria-label", T(open ? "Cerrar menú" : "Abrir menú"));
     links.classList.toggle("is-open", open);
     body.style.overflow = open ? "hidden" : "";
+    document.documentElement.classList.toggle("menu-open", open);
   });
   links.querySelectorAll("a").forEach(a => a.addEventListener("click", () => {
     toggle.setAttribute("aria-expanded", "false");
     links.classList.remove("is-open");
     body.style.overflow = "";
+    document.documentElement.classList.remove("menu-open");
   }));
 
   // scroll suave con easing entre secciones, compensando la cabecera fija
