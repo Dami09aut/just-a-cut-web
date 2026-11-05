@@ -5,6 +5,10 @@
   "use strict";
 
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // bucle de animación que se duerme solo cuando no hay nada que mover
+  const idleLoop = step => { let on = false; const f = now => { if (step(now)) requestAnimationFrame(f); else on = false; }; return () => { if (!on) { on = true; requestAnimationFrame(f); } }; };
+  const LOW_END = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+  if (LOW_END) document.documentElement.classList.add("low-end");
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -102,7 +106,7 @@
       });
     }
     resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, LOW_END ? 1 : 1.35);
       const r = this.c.getBoundingClientRect();
       this.w = Math.max(1, r.width);
       this.h = Math.max(1, r.height);
@@ -432,6 +436,10 @@
   });
 
 
+  // posición del logo en la capa (centro u, centro v, tamaño en alto) y su trazado dentro de la textura
+  const LOGO_TEX = [10.24 * 1.2, -0.1 * 1024, -0.085 * 1024 + 40];
+  const capeLogoRect = aspect => aspect > 1.1 ? [0.72, 0.5, 0.36] : [0.5, 0.26, 0.24];
+
   /* =========================================================
      LA CAPA: bandera gigante de fondo (WebGL, tela iluminada)
      ========================================================= */
@@ -572,7 +580,7 @@
     const lc = document.createElement("canvas"); lc.width = lc.height = 1024;
     const lx = lc.getContext("2d");
     lx.fillStyle = "#000"; lx.fillRect(0, 0, 1024, 1024);
-    lx.setTransform(10.24 * 1.2, 0, 0, 10.24 * 1.2, -0.1 * 1024, -0.085 * 1024 + 40);
+    lx.setTransform(LOGO_TEX[0], 0, 0, LOGO_TEX[0], LOGO_TEX[1], LOGO_TEX[2]);
     lx.strokeStyle = "#fff"; lx.lineWidth = 7.5; lx.lineJoin = "miter"; lx.miterLimit = 10;
     LOGO_PATHS.forEach(p => lx.stroke(new Path2D(p)));
     const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -603,7 +611,7 @@
     const CAMZ = 3.0;
     let W = 1, H = 1, aspect = 1;
     function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      const dpr = Math.min(window.devicePixelRatio || 1, LOW_END ? 1 : 1.5);
       W = canvas.clientWidth; H = canvas.clientHeight; aspect = W / Math.max(1, H);
       canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
       gl.viewport(0, 0, canvas.width, canvas.height);
@@ -615,8 +623,8 @@
       // hilos de ~4 px en pantalla
       gl.uniform2f(uWeave, W * 1.15 / 4.2, H * 1.12 / 4.2);
       // el logo va a la derecha en pantallas anchas; abajo en móvil
-      if (aspect > 1.1) gl.uniform4f(uLogoRect, 0.72, 0.5, 0.36, aspect * 1.06);
-      else gl.uniform4f(uLogoRect, 0.5, 0.26, 0.24, aspect * 1.06);
+      const lr = capeLogoRect(aspect);
+      gl.uniform4f(uLogoRect, lr[0], lr[1], lr[2], aspect * 1.06);
     }
 
     const gusts = [[0, 0, 0, 9], [0, 0, 0, 9], [0, 0, 0, 9]];
@@ -662,6 +670,167 @@
   if (!mountFlag(document.getElementById("cape-canvas"))) document.querySelector(".cape-sec")?.classList.add("no-gl");
 
   /* =========================================================
+     LA CAPA CON PELO: la máquina corta por donde pasa (el logo no se corta)
+     ========================================================= */
+  (function mountHair() {
+    const sec = document.querySelector(".cape-sec");
+    const hairCanvas = document.getElementById("hair-canvas");
+    if (!sec || !hairCanvas) return;
+    const fall = document.getElementById("hair-fall");
+    const hctx = hairCanvas.getContext("2d"), fctx = fall.getContext("2d");
+    const meter = sec.querySelector(".hair-meter-val"), meterBar = sec.querySelector(".hair-meter-bar i");
+    const done = sec.querySelector(".hair-done");
+    const clipper = document.querySelector(".clipper");
+    let W = 0, H = 0, dpr = 1, strands = [], grid = new Map(), cutCount = 0, total = 1, finished = false;
+    const CELL = 24;
+    let R = 22; // radio de la cuchilla
+
+    function logoMask() {
+      // máscara del logo en coordenadas de pantalla, con margen para el ondeo de la tela
+      const m = document.createElement("canvas"); m.width = W; m.height = H;
+      const c = m.getContext("2d");
+      const asp = W / H, [u, v, size] = capeLogoRect(asp);
+      const side = size * 2.5 / 2.24 * H;
+      const cx = (0.5 + (u - 0.5) * (2.5 * asp * 1.06) / (2.24 * asp)) * W;
+      const cy = (0.5 - (v - 0.5) * 2.5 / 2.24) * H;
+      const k = side / 1024;
+      c.setTransform(k * LOGO_TEX[0], 0, 0, k * LOGO_TEX[0], cx - side / 2 + k * LOGO_TEX[1], cy - side / 2 + k * LOGO_TEX[2]);
+      c.strokeStyle = "#fff"; c.lineWidth = 7.5 + 9; c.lineJoin = "round"; c.lineCap = "round";
+      LOGO_PATHS.forEach(p => c.stroke(new Path2D(p)));
+      const data = c.getImageData(0, 0, W, H).data;
+      return (x, y) => { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= H) return false; return data[(y * W + x) * 4 + 3] > 10; };
+    }
+
+    function flow(x, y) {
+      // remolinos suaves, como pelo recién caído sobre la capa
+      return Math.sin(x * 0.006 + Math.cos(y * 0.008) * 1.7) * 1.4 + Math.cos(y * 0.005 - x * 0.002) * 0.9 + 1.2;
+    }
+
+    function build() {
+      dpr = Math.min(window.devicePixelRatio || 1, LOW_END ? 1 : 1.5);
+      W = sec.clientWidth; H = sec.clientHeight;
+      [hairCanvas, fall].forEach(c => { c.width = W * dpr; c.height = H * dpr; });
+      hctx.setTransform(dpr, 0, 0, dpr, 0, 0); fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      R = W < 700 ? 26 : 22;
+      const onLogo = logoMask();
+      strands = []; grid = new Map(); cutCount = 0; finished = false;
+      const n = Math.round(W * H / (W < 700 ? 150 : LOW_END ? 170 : 120));
+      for (let i = 0; i < n; i++) {
+        const x = Math.random() * W, y = Math.random() * H;
+        const a = flow(x, y) + (Math.random() - 0.5) * 0.9;
+        const len = 7 + Math.random() * 15;
+        const ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len;
+        if (onLogo(x, y) || onLogo(ex, ey) || onLogo((x + ex) / 2, (y + ey) / 2)) continue;
+        const bend = (Math.random() - 0.5) * len * 0.5;
+        const r = Math.random(), tone = r < 0.07 ? 4 : r < 0.3 ? 3 : r < 0.55 ? 2 : r < 0.8 ? 1 : 0;
+        const s = { x, y, ex, ey, cx: (x + ex) / 2 - Math.sin(a) * bend, cy: (y + ey) / 2 + Math.cos(a) * bend, a, len,
+          tone, col: TONE_COL[tone], w: TONES[tone][1], cut: false };
+        strands.push(s);
+        const key = ((x / CELL) | 0) + "," + ((y / CELL) | 0);
+        (grid.get(key) || grid.set(key, []).get(key)).push(s);
+      }
+      total = strands.length || 1;
+      drawAll();
+      updateMeter();
+      sec.classList.remove("hair-finished");
+    }
+
+    function drawAll() {
+      // todo el pelo en pocas pasadas: una sombra y 5 tonos, cada uno un solo trazo
+      hctx.clearRect(0, 0, W, H);
+      hctx.lineCap = "round";
+      const shadow = new Path2D(), tones = [0, 1, 2, 3, 4].map(() => new Path2D());
+      for (const s of strands) {
+        shadow.moveTo(s.x + 0.8, s.y + 1.2); shadow.quadraticCurveTo(s.cx + 0.8, s.cy + 1.2, s.ex + 0.8, s.ey + 1.2);
+        const t = tones[s.tone]; t.moveTo(s.x, s.y); t.quadraticCurveTo(s.cx, s.cy, s.ex, s.ey);
+      }
+      hctx.strokeStyle = "rgba(0,0,0,.55)"; hctx.lineWidth = 1.9; hctx.stroke(shadow);
+      TONES.forEach((c, i) => { hctx.strokeStyle = c[0]; hctx.lineWidth = c[1]; hctx.stroke(tones[i]); });
+    }
+    const TONES = [["rgba(78,78,78,.9)", 0.8], ["rgba(102,102,102,.9)", 0.9], ["rgba(128,128,128,.9)", 0.8], ["rgba(155,155,155,.9)", 0.7], ["rgba(205,205,205,.75)", 0.6]];
+    const TONE_COL = [78, 102, 128, 155, 205];
+
+    const falling = [];
+    function cutAt(x0, y0, x1, y1) {
+      // la cuchilla barre el pelo entre la posición anterior y la actual
+      hctx.save();
+      hctx.globalCompositeOperation = "destination-out";
+      hctx.lineCap = "round"; hctx.lineWidth = R * 2;
+      hctx.beginPath(); hctx.moveTo(x0, y0); hctx.lineTo(x1, y1); hctx.stroke();
+      hctx.restore();
+      const minX = Math.min(x0, x1) - R - 30, maxX = Math.max(x0, x1) + R + 30;
+      const minY = Math.min(y0, y1) - R - 30, maxY = Math.max(y0, y1) + R + 30;
+      const dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy || 1;
+      let n = 0;
+      for (let gx = (minX / CELL) | 0; gx <= (maxX / CELL) | 0; gx++) for (let gy = (minY / CELL) | 0; gy <= (maxY / CELL) | 0; gy++) {
+        const list = grid.get(gx + "," + gy); if (!list) continue;
+        for (const s of list) {
+          if (s.cut) continue;
+          const mx = (s.x + s.ex) / 2, my = (s.y + s.ey) / 2;
+          const t = clamp(((mx - x0) * dx + (my - y0) * dy) / L2, 0, 1);
+          if (Math.hypot(mx - (x0 + dx * t), my - (y0 + dy * t)) < R) {
+            s.cut = true; cutCount++; n++;
+            if (falling.length < 520 && Math.random() < 0.7) falling.push({
+              x: mx, y: my, a: s.a, len: s.len, col: s.col, w: s.w,
+              vx: (Math.random() - 0.5) * 1.6 + dx * 0.02, vy: -Math.random() * 1.4, va: (Math.random() - 0.5) * 0.18, life: 1,
+            });
+          }
+        }
+      }
+      if (n) { updateMeter(); if (!fallRunning) { fallRunning = true; requestAnimationFrame(fallLoop); } }
+    }
+
+    function updateMeter() {
+      const p = Math.min(100, Math.round(cutCount / total * 100 / 0.9));
+      if (meter) meter.textContent = p + "%";
+      if (meterBar) meterBar.style.transform = `scaleX(${p / 100})`;
+      if (p >= 100 && !finished) { finished = true; sec.classList.add("hair-finished"); }
+    }
+
+    let fallRunning = false;
+    function fallLoop() {
+      fctx.clearRect(0, 0, W, H);
+      fctx.lineCap = "round";
+      for (let i = falling.length - 1; i >= 0; i--) {
+        const f = falling[i];
+        f.vy += 0.16; f.vx *= 0.985; f.x += f.vx; f.y += f.vy; f.a += f.va; f.life -= 0.012;
+        if (f.life <= 0 || f.y > H + 20) { falling.splice(i, 1); continue; }
+        const hx = Math.cos(f.a) * f.len / 2, hy = Math.sin(f.a) * f.len / 2;
+        fctx.strokeStyle = `rgba(${f.col},${f.col},${f.col},${Math.min(1, f.life * 1.4)})`;
+        fctx.lineWidth = f.w;
+        fctx.beginPath(); fctx.moveTo(f.x - hx, f.y - hy); fctx.lineTo(f.x + hx, f.y + hy); fctx.stroke();
+      }
+      if (falling.length) requestAnimationFrame(fallLoop); else { fallRunning = false; fctx.clearRect(0, 0, W, H); }
+    }
+
+    // la máquina sigue al cursor (o al dedo) dentro de la sección
+    let last = null, buzzT, clipOn = false;
+    const setClip = on => { if (on === clipOn) return; clipOn = on; sec.classList.toggle("is-clipping", on); document.documentElement.classList.toggle("is-clipping-on", on); };
+    sec.addEventListener("pointermove", e => {
+      if (!built) return;
+      if (e.target.closest("a, button")) { last = null; setClip(false); return; }
+      const r = sec.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      setClip(true);
+      if (clipper) {
+        clipper.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+        clipper.classList.add("is-buzz"); clearTimeout(buzzT); buzzT = setTimeout(() => clipper.classList.remove("is-buzz"), 120);
+      }
+      if (last) cutAt(last[0], last[1], x, y); else cutAt(x, y, x, y);
+      last = [x, y];
+    });
+    sec.addEventListener("pointerleave", () => { last = null; setClip(false); });
+    sec.addEventListener("pointerdown", e => { if (e.pointerType !== "mouse") last = null; });
+    sec.querySelector(".hair-reset")?.addEventListener("click", e => { e.preventDefault(); build(); });
+
+    let rT;
+    let built = false;
+    window.addEventListener("resize", () => { if (!built) return; clearTimeout(rT); rT = setTimeout(() => { if (Math.abs(sec.clientWidth - W) > 40 || Math.abs(sec.clientHeight - H) > 120) build(); }, 250); });
+    // se prepara justo antes de llegar a la sección, no al cargar la página
+    new IntersectionObserver((en, o) => { if (en[0].isIntersecting) { o.disconnect(); built = true; build(); } }, { rootMargin: "600px 0px" }).observe(sec);
+  })();
+
+  /* =========================================================
      UI
      ========================================================= */
   function revealHero() {
@@ -705,12 +874,13 @@
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
   if (!reduceMotion) {
-    (function skewLoop() {
+    const kickSkew = idleLoop(() => {
       vel *= 0.86;
       skew = lerp(skew, clamp(vel * 0.05, -8, 8), 0.2);
       if (marquee) marquee.parentElement.style.setProperty("--skew", `${skew.toFixed(2)}deg`);
-      requestAnimationFrame(skewLoop);
-    })();
+      return Math.abs(vel) > 0.05 || Math.abs(skew) > 0.01;
+    });
+    window.addEventListener("scroll", kickSkew, { passive: true });
   }
 
   // menú móvil
@@ -755,18 +925,20 @@
     const sc = cur.querySelector(".scissors");
     const label = cur.querySelector(".cursor-label");
     let mx = innerWidth / 2, my = innerHeight / 2, rx = mx, ry = my;
-    window.addEventListener("pointermove", e => {
-      mx = e.clientX; my = e.clientY;
-      cur.classList.add("is-on");
-    }, { passive: true });
-    document.addEventListener("pointerleave", () => cur.classList.remove("is-on"));
-    (function loop() {
+    const kickCur = idleLoop(() => {
       rx = lerp(rx, mx, 0.45); ry = lerp(ry, my, 0.45);
       // la punta de las tijeras es el punto exacto del ratón
       sc.style.transform = `translate3d(${rx - 3}px, ${ry - 3}px, 0)`;
       label.style.transform = `translate3d(${rx + 30}px, ${ry + 34}px, 0)`;
-      requestAnimationFrame(loop);
-    })();
+      return Math.abs(rx - mx) + Math.abs(ry - my) > 0.3;
+    });
+    window.addEventListener("pointermove", e => {
+      mx = e.clientX; my = e.clientY;
+      cur.classList.add("is-on");
+      kickCur();
+    }, { passive: true });
+    document.addEventListener("pointerleave", () => cur.classList.remove("is-on"));
+
     window.addEventListener("pointerdown", e => {
       if (e.pointerType !== "mouse") return;
       cur.classList.remove("is-snip");
@@ -847,14 +1019,14 @@
       });
     });
     list.addEventListener("pointerleave", () => { pv = false; preview.classList.remove("is-on"); });
-    list.addEventListener("pointermove", e => { tx = e.clientX; ty = e.clientY; if (!pv) { px = tx; py = ty; } });
-    (function ploop() {
+    const kickPrev = idleLoop(() => {
       const nx = lerp(px, tx, 0.14), ny = lerp(py, ty, 0.14);
       rot = lerp(rot, clamp((nx - px) * 0.6, -12, 12), 0.2);
       px = nx; py = ny;
       preview.style.transform = `translate3d(${px}px, ${py}px, 0) translate(-50%, -50%) rotate(${rot.toFixed(2)}deg)`;
-      requestAnimationFrame(ploop);
-    })();
+      return Math.abs(px - tx) + Math.abs(py - ty) + Math.abs(rot) > 0.2;
+    });
+    list.addEventListener("pointermove", e => { tx = e.clientX; ty = e.clientY; if (!pv) { px = tx; py = ty; } kickPrev(); });
 
     // logo neón: brilla más cuando el cursor se acerca
     const neon = document.querySelector(".hero-sign");
@@ -888,11 +1060,17 @@
   if (poles.length && !reduceMotion) {
     let py = 0, last = performance.now(), spin = 0;
     window.addEventListener("scroll", () => { spin = Math.min(spin + 6, 220); }, { passive: true });
+    // solo se actualizan los postes que se ven, a ~30 fps
+    const seen = new Set();
+    const pio = new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? seen.add(e.target) : seen.delete(e.target)));
+    poles.forEach(p => pio.observe(p));
+    let acc = 0;
     (function poleLoop(now) {
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
       spin *= Math.pow(0.08, dt);
       py += (26 + spin) * dt;
-      poles.forEach(p => p.style.setProperty("--pole-y", `${py.toFixed(2)}px`));
+      acc += dt;
+      if (acc > 0.033) { acc = 0; const v = `${py.toFixed(1)}px`; seen.forEach(p => p.style.setProperty("--pole-y", v)); }
       requestAnimationFrame(poleLoop);
     })(last);
   }

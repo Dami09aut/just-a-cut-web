@@ -580,8 +580,14 @@ body.is-ready .hero-title .line > span { transform: none; }
 .sign-row {
   position: relative; z-index: 1; display: inline-flex; align-items: center; gap: .04em;
   padding: .42em 0 .5em; opacity: 0;
-  filter: drop-shadow(0 0 .14em rgba(255,255,255,calc(.22 + var(--glow, 0) * .35)));
-  transition: filter .3s;
+  filter: drop-shadow(0 0 .14em rgba(255,255,255,.24));
+  will-change: opacity;
+}
+/* brillo extra al acercar el cursor: una capa aparte que solo cambia de opacidad */
+.hero-sign::after {
+  content: ""; position: absolute; inset: -10% -6%; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse 50% 45% at 50% 52%, rgba(255,255,255,.12), transparent 70%);
+  opacity: var(--glow, 0); transition: opacity .3s;
 }
 .sign-word {
   font-family: var(--display); font-weight: 900; text-transform: uppercase; letter-spacing: -.01em;
@@ -668,15 +674,18 @@ body.is-ready .pole-rail { opacity: 1; }
 .stars { display: inline-flex; gap: 4px; }
 .stars svg { width: 18px; height: 18px; fill: url(#gold); overflow: visible; }
 .stars-lg svg { width: 30px; height: 30px; }
-.stars svg { fill: var(--gold-2); filter: drop-shadow(0 0 6px rgba(240, 200, 90, .45)); animation: starGlow 3.2s ease-in-out infinite; }
-.stars svg:nth-child(2) { animation-delay: .15s; } .stars svg:nth-child(3) { animation-delay: .3s; }
-.stars svg:nth-child(4) { animation-delay: .45s; } .stars svg:nth-child(5) { animation-delay: .6s; }
+.stars svg { fill: var(--gold-2); }
+/* las estrellas grandes brillan; las del carrusel quedan doradas fijas (más ligero) */
+.stars-lg svg { filter: drop-shadow(0 0 7px rgba(240, 200, 90, .55)); animation: starGlow 3.2s ease-in-out infinite; will-change: transform, opacity; }
+.review .stars svg { fill: #e0b54a; }
+.stars-lg svg:nth-child(2) { animation-delay: .15s; } .stars-lg svg:nth-child(3) { animation-delay: .3s; }
+.stars-lg svg:nth-child(4) { animation-delay: .45s; } .stars-lg svg:nth-child(5) { animation-delay: .6s; }
 @keyframes starGlow {
-  0%, 70%, 100% { fill: var(--gold-2); filter: drop-shadow(0 0 5px rgba(240,200,90,.35)); transform: scale(1); }
-  80% { fill: var(--gold-1); filter: drop-shadow(0 0 12px rgba(255,225,130,.95)) drop-shadow(0 0 3px #fff); transform: scale(1.14); }
+  0%, 70%, 100% { transform: scale(1); opacity: .88; }
+  80% { transform: scale(1.16); opacity: 1; }
 }
 .reviews-viewport { mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
-.reviews-track { display: flex; gap: 20px; width: max-content; animation: reviewsLoop 60s linear infinite; }
+.reviews-track { display: flex; gap: 20px; width: max-content; animation: reviewsLoop 60s linear infinite; will-change: transform; }
 .reviews-viewport:hover .reviews-track { animation-play-state: paused; }
 @keyframes reviewsLoop { to { transform: translateX(calc(-50% - 10px)); } }
 .review {
@@ -693,7 +702,7 @@ body.is-ready .pole-rail { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .reviews-track { animation: none; } .reviews-viewport { overflow-x: auto; } .stars svg { animation: none; } }
 
 /* ---------- Abierto / cerrado ---------- */
-.open-status { display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px 9px 13px; margin-bottom: 26px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; background: rgba(0,0,0,.45); backdrop-filter: blur(6px); }
+.open-status { display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px 9px 13px; margin-bottom: 26px; border: 1px solid var(--line-strong); border-radius: 999px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; background: rgba(0,0,0,.62); }
 .open-status strong { font-weight: 600; }
 .open-status .open-text { color: #ddd; }
 .open-dot { position: relative; width: 9px; height: 9px; border-radius: 50%; background: #666; flex: none; }
@@ -759,3 +768,28 @@ body.is-ready .pole-rail { opacity: 1; }
 @media (max-width: 860px) { .visit-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .map-go { left: 20px; right: auto; bottom: auto; top: 20px; } }
 @media (prefers-reduced-motion: reduce) { .map-pin-ring { animation: none; } }
+
+/* ---------- Capa con pelo + máquina de cortar ---------- */
+#hair-canvas, #hair-fall { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.cape-sec { cursor: auto; }
+.cape-sec.is-clipping { cursor: none; }
+.cape-sec .cape-text { position: relative; }
+.hair-meter { display: grid; grid-template-columns: auto 1fr; gap: 10px 16px; align-items: baseline; max-width: 320px; margin-top: 22px; }
+.hair-meter-k { font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--muted); }
+.hair-meter-val { font-family: var(--display); font-weight: 800; font-size: 28px; justify-self: end; font-variant-numeric: tabular-nums; }
+.hair-meter-bar { grid-column: 1 / -1; height: 2px; background: var(--line-strong); overflow: hidden; }
+.hair-meter-bar i { display: block; height: 100%; background: #fff; transform: scaleX(0); transform-origin: left; transition: transform .3s; }
+.hair-done { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 22px; opacity: 0; transform: translateY(12px); pointer-events: none; transition: opacity .6s, transform .6s var(--ease); }
+.hair-done p { flex: 1 1 100%; margin: 0 0 4px; font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: 26px; }
+.hair-finished .hair-done { opacity: 1; transform: none; pointer-events: auto; }
+.clipper { position: fixed; left: 0; top: 0; z-index: 310; pointer-events: none; opacity: 0; transition: opacity .2s; will-change: transform; }
+.clipper svg { display: block; translate: -23px -2px; rotate: -18deg; transform-origin: 23px 2px; filter: drop-shadow(0 8px 14px rgba(0,0,0,.7)); }
+.clipper.is-buzz svg { animation: buzz .07s linear infinite; }
+@keyframes buzz { 0% { translate: -23.6px -2px; } 50% { translate: -22.4px -1.4px; } 100% { translate: -23.6px -2px; } }
+.is-clipping-on .clipper { opacity: 1; }
+.is-clipping-on .cursor { opacity: 0 !important; }
+@media (hover: none) { .clipper { display: none; } }
+
+/* equipos modestos o movimiento reducido: menos efectos */
+.low-end .nav, .low-end .nav.is-scrolled { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.low-end .stars-lg svg { animation: none; }
