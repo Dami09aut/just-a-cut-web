@@ -836,9 +836,9 @@
     })();
 
     // logo neón: brilla más cuando el cursor se acerca
-    const neon = document.querySelector(".hero-neon");
+    const neon = document.querySelector(".hero-sign");
     if (neon) {
-      const svg = neon.querySelector(".neon");
+      const svg = neon.querySelector(".sign-mono");
       heroEl.addEventListener("pointermove", e => {
         const r = svg.getBoundingClientRect();
         const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
