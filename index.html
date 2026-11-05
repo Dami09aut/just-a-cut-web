@@ -41,8 +41,7 @@
       <a href="#servicios">Servicios</a>
       <a href="#estudio">Estudio</a>
       <a href="#galeria">Galería</a>
-      <a href="#horario">Horario</a>
-      <a href="#ubicacion">Ubicación</a>
+      <a href="#ubicacion">Horario y ubicación</a>
       <a href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener" data-cursor="Reservar" class="js-book btn btn-solid btn-sm">Reservar</a>
     </nav>
     <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-links"><span></span><span></span></button>
@@ -363,16 +362,22 @@
       </div>
     </section>
 
-    <!-- ============ HORARIO ============ -->
-    <section class="section hours" id="horario">
-      <div class="container hours-grid">
-        <div>
-          <p class="eyebrow reveal">05 · Horario</p>
-          <h2 class="h2 reveal">Cuándo<br><span class="muted">encontrarnos.</span></h2>
-          <a href="#horario" class="open-status open-status-lg reveal" data-open-status><span class="open-dot"></span><span class="open-text">Horario</span></a>
-          <p class="lead reveal">Para no esperar, reserva tu hueco online. Si llegas sin cita, te atendemos en cuanto haya un sillón libre.</p>
-        </div>
-        <ul class="hours-list reveal">
+    <!-- ============ HORARIO Y UBICACIÓN ============ -->
+    <section class="section visit" id="ubicacion">
+      <div class="container">
+        <div class="visit-grid">
+          <div>
+            <p class="eyebrow reveal">05 · Horario y ubicación</p>
+            <h2 class="h2 reveal">Ven a<br><span class="muted">vernos.</span></h2>
+            <a href="#horario" class="open-status open-status-lg reveal" data-open-status><span class="open-dot"></span><span class="open-text">Horario</span></a>
+            <dl class="info reveal">
+              <div><dt>Dirección</dt><dd>C. Buenaventura Bonnet, 14<br>38008 Santa Cruz de Tenerife</dd></div>
+              <div><dt>Reservas</dt><dd><a class="js-book" href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener">cut.yeasyapp.com</a></dd></div>
+              <div><dt>Instagram</dt><dd><a href="https://www.instagram.com/justacut.studio/" target="_blank" rel="noopener">@justacut.studio</a></dd></div>
+            </dl>
+          </div>
+          <div id="horario" class="visit-hours">
+            <ul class="hours-list reveal">
             <li class="hours-row" data-day="1"><span class="hours-day">Lunes</span><span class="hours-time">10:00 — 14:00 · 16:00 — 20:00</span><span class="hours-today">Hoy</span></li>
             <li class="hours-row" data-day="2"><span class="hours-day">Martes</span><span class="hours-time">10:00 — 15:00</span><span class="hours-today">Hoy</span></li>
             <li class="hours-row" data-day="3"><span class="hours-day">Miércoles</span><span class="hours-time">10:00 — 14:00 · 16:00 — 20:00</span><span class="hours-today">Hoy</span></li>
@@ -381,27 +386,20 @@
             <li class="hours-row" data-day="6"><span class="hours-day">Sábado</span><span class="hours-time">09:30 — 14:00</span><span class="hours-today">Hoy</span></li>
             <li class="hours-row is-closed" data-day="0"><span class="hours-day">Domingo</span><span class="hours-time">Cerrado</span><span class="hours-today">Hoy</span></li>
         </ul>
-      </div>
-    </section>
-
-    <!-- ============ UBICACIÓN ============ -->
-    <section class="section location" id="ubicacion">
-      <div class="container loc-grid">
-        <div>
-          <p class="eyebrow reveal">06 · Ubicación</p>
-          <h2 class="h2 reveal">Ven a vernos.</h2>
-          <dl class="info reveal">
-            <div><dt>Dirección</dt><dd>C. Buenaventura Bonnet, 14<br>38008 Santa Cruz de Tenerife</dd></div>
-            <div><dt>Reservas</dt><dd><a class="js-book" href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener">cut.yeasyapp.com</a></dd></div>
-            <div><dt>Instagram</dt><dd><a href="https://www.instagram.com/justacut.studio/" target="_blank" rel="noopener">@justacut.studio</a></dd></div>
-            <div><dt>Horario</dt><dd><a href="#horario">Ver horario completo</a></dd></div>
-          </dl>
-          <a class="btn btn-ghost reveal" href="https://www.google.com/maps/search/?api=1&query=Calle+Buenaventura+Bonnet+14+38008+Santa+Cruz+de+Tenerife" target="_blank" rel="noopener">Cómo llegar <span aria-hidden="true">↗</span></a>
+          </div>
         </div>
-        <div class="map reveal">
-          <iframe title="Mapa: Just A Cut, Buenaventura Bonnet 14" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-            src="https://maps.google.com/maps?q=Calle%20Buenaventura%20Bonnet%2014%2C%2038008%20Santa%20Cruz%20de%20Tenerife&z=16&output=embed"></iframe>
-        </div>
+        <a class="map-card reveal" href="https://www.google.com/maps/search/?api=1&amp;query=Just+A+Cut+Calle+Buenaventura+Bonnet+14+38008+Santa+Cruz+de+Tenerife" target="_blank" rel="noopener" data-cursor="Ir" aria-label="Abrir Just A Cut en Google Maps">
+          <iframe title="Mapa: Just A Cut, Buenaventura Bonnet 14" loading="lazy" tabindex="-1" referrerpolicy="no-referrer-when-downgrade"
+            src="https://maps.google.com/maps?q=Calle%20Buenaventura%20Bonnet%2014%2C%2038008%20Santa%20Cruz%20de%20Tenerife&amp;z=17&amp;output=embed"></iframe>
+          <span class="map-shade" aria-hidden="true"></span>
+          <span class="map-grid" aria-hidden="true"></span>
+          <span class="map-pin" aria-hidden="true"><span class="map-pin-ring"></span><span class="map-pin-ring"></span><span class="map-pin-head"><img src="assets/logo.svg" alt=""></span><span class="map-pin-stem"></span></span>
+          <span class="map-label">
+            <span class="map-label-k">Just A Cut</span>
+            <span class="map-label-v">C. Buenaventura Bonnet, 14 · Santa Cruz</span>
+          </span>
+          <span class="map-go">Cómo llegar <span aria-hidden="true">↗</span></span>
+        </a>
       </div>
     </section>
   </main>
