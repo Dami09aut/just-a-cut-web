@@ -1072,3 +1072,89 @@ html[lang="ar"] em, html[lang="ar"] .t-serif, html[lang="ar"] .cookie-title em {
 html[lang="ar"] .h2 .t-serif { font-weight: 500; }
 /* el logotipo y las marcas siempre de izquierda a derecha */
 html[dir="rtl"] .sign-row, html[dir="rtl"] .nav-brand, html[dir="rtl"] .intro { direction: ltr; }
+
+/* =========================================================
+   MÓVIL COMPACTO: menos scroll, todo más ajustado
+   ========================================================= */
+@media (max-width: 700px) {
+  .section { padding: 64px 0; }
+  .section-head { margin-bottom: 28px; }
+  .h2 { font-size: clamp(38px, 11vw, 52px); }
+
+  /* Servicios: nombre y precio en una línea, descripción y botón debajo */
+  .services-head { margin-bottom: 22px; }
+  .services-aside .btn { display: none; }
+  .services-aside p { margin-bottom: 0; }
+  .service-group { margin-top: 26px; padding-bottom: 8px; }
+  .service, .service:nth-child(n) {
+    grid-template-columns: 1fr auto; grid-template-areas: "name price" "desc cta";
+    gap: 6px 14px; padding: 16px 0; align-items: center;
+  }
+  .service-num, .service-thumb { display: none; }
+  .service > div { display: contents; }
+  .service h3 { grid-area: name; font-size: 26px; margin: 0; }
+  .service p { grid-area: desc; font-size: 13px; line-height: 1.45; }
+  .service-price { grid-area: price; font-size: 24px; }
+  .service-cta { grid-area: cta; padding: 8px 12px; font-size: 10px; align-self: end; white-space: nowrap; }
+  .service:hover h3 { transform: none; }
+  .note { margin-top: 18px; font-size: 12px; }
+
+  /* Quiénes somos: foto más baja y fichas de barbero en dos columnas */
+  .team-photo { max-width: 100%; padding: 0 0 12px 12px; }
+  .team-photo .tilt-inner { aspect-ratio: 4 / 3.4; }
+  .barbers { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 0; }
+  .barber { padding: 16px 14px 14px; }
+  .studio-cta { display: none; }
+  .team-stats { margin-bottom: 18px; }
+
+  /* Ali y Hamu: fotos en dos columnas, redes compactas */
+  .barber-grid { gap: 26px; }
+  .barber-media { padding: 0; display: grid; grid-template-columns: 1.25fr 1fr; gap: 8px; }
+  .barber-portrait, .barber-action { position: relative; width: auto; aspect-ratio: 4 / 5; border: 1px solid var(--line-strong); outline: 0; }
+  .barber-social { gap: 8px; margin-bottom: 18px; }
+  .barber-social a { padding: 11px 12px; gap: 0 10px; }
+  .barber-social em { font-size: 13px; }
+  .barber-cuts { margin-top: 28px; }
+  .shots.shots-row { grid-auto-columns: 42vw; gap: 8px; }
+
+  /* Historia: carrusel horizontal */
+  .story-list { display: grid; grid-auto-flow: column; grid-template-columns: none; grid-auto-columns: 74vw; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 24px calc(var(--gutter) * -1) 0; padding: 0 var(--gutter) 10px; scrollbar-width: none; }
+  .story-list::-webkit-scrollbar { display: none; }
+  .story-item { scroll-snap-align: start; }
+  .story-item figure { aspect-ratio: 4 / 3; margin-bottom: 12px; }
+  .story-item p { font-size: 13px; }
+
+  /* Lema y experiencia */
+  .quote { padding: 72px 0; }
+
+  /* Galería: rejilla de 3 columnas y 9 fotos al principio */
+  .shots:not(.shots-row) { columns: auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+  .shots:not(.shots-row) .shot { margin: 0; aspect-ratio: 1; }
+  .shots:not(.shots-row) .shot-bw { height: 100%; object-fit: cover; }
+  .shots:not(.shots-row) .shot:nth-child(n+10) { display: none; }
+  .shots.show-all:not(.shots-row) .shot:nth-child(n+10) { display: block; }
+  .shot figcaption { display: none; }
+  .shots-foot { margin-top: 18px; gap: 8px; }
+
+  /* Reservar: la silla al lado del texto, pequeña */
+  .cta-band { padding: 64px 0; }
+  .cta-chair { width: min(230px, 62vw); margin-top: 32px; }
+  .cta-chair figcaption { font-size: 18px; margin-top: 10px; }
+
+  /* Horario y ubicación: filas compactas y mapa más bajo */
+  .info > div { padding: 10px 0; }
+  .hours-row, .visit-hours .hours-row { grid-template-columns: 1fr auto auto; padding: 10px 8px; gap: 10px; }
+  .hours-day { font-size: 16px; }
+  .hours-time { grid-column: auto; font-size: 12.5px; text-align: end; }
+  .hours-today { grid-column: auto; grid-row: auto; }
+  .map-card { height: 240px; }
+
+  .barber-sec.is-flip .barber-media { padding: 0; }
+  .barber-sec .barber-action, .barber-sec.is-flip .barber-action { position: relative; left: auto; right: auto; aspect-ratio: auto; height: 100%; }
+  .cape-sec { min-height: 92svh; }
+  .map-off { top: 70px; }
+
+  /* Footer en dos columnas */
+  .footer-grid { grid-template-columns: 1fr 1fr; gap: 26px 18px; padding-bottom: 28px; }
+  .footer-brand { grid-column: 1 / -1; }
+}
