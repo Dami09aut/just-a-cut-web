@@ -1160,4 +1160,25 @@
     update();
     setInterval(update, 30000);
   })();
+
+  /* ---------- Galería: foco de color ---------- */
+  (function shots() {
+    const wraps = document.querySelectorAll(".shots");
+    wraps.forEach(wrap => {
+    wrap.addEventListener("pointermove", e => {
+      const el = e.target.closest(".shot"); if (!el || e.pointerType !== "mouse") return;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--x", `${e.clientX - r.left}px`);
+      el.style.setProperty("--y", `${e.clientY - r.top}px`);
+    });
+    wrap.addEventListener("pointerover", e => { const el = e.target.closest(".shot"); if (el) el.setAttribute("data-cursor", "Ver"); });
+    // en móvil la foto que está en el centro de la pantalla se ilumina a color
+    if (window.matchMedia("(hover: none)").matches) {
+      const io = new IntersectionObserver(es => es.forEach(en => en.target.classList.toggle("is-lit", en.isIntersecting)), { rootMargin: "-35% 0px -35% 0px" });
+      wrap.querySelectorAll(".shot").forEach(el => io.observe(el));
+    }
+    });
+    const more = document.querySelector(".shots-more");
+    if (more) more.addEventListener("click", () => document.querySelector(".shots:not(.shots-row)").classList.add("show-all"));
+  })();
 })();
