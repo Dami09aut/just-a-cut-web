@@ -816,3 +816,14 @@ body.is-ready .pole-rail { opacity: 1; }
 .h2 .t-serif, .h2 .t-outline { transition: letter-spacing 1.2s var(--ease); }
 .reveal:not(.is-in) .t-serif { letter-spacing: .04em; }
 @media (max-width: 640px) { .h2 .t-outline { -webkit-text-stroke-width: 1.1px; } .h2-cape .t-sm { letter-spacing: .22em; } }
+
+/* Horario y ubicación: las dos columnas empiezan y terminan a la misma altura */
+@media (min-width: 861px) {
+  .visit-grid { align-items: stretch; }
+  .visit-grid > div:first-child { display: flex; flex-direction: column; }
+  .visit .info { margin-top: auto; }
+  .visit .open-status-lg { align-self: flex-start; }
+  .visit-hours { display: flex; flex-direction: column; }
+  .visit-hours .hours-list { flex: 1; display: flex; flex-direction: column; }
+  .visit-hours .hours-row { flex: 1; padding-top: 14px; padding-bottom: 14px; }
+}
