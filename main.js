@@ -17,10 +17,10 @@
   const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
   const smooth = t => t * t * (3 - 2 * t);
 
-  // Trazos del logo (viewBox 100x100), los mismos que assets/logo.svg
+  // Formas del logo (viewBox 100x100, rellenas), las mismas que assets/logo.svg
   const LOGO_PATHS = [
-    "M27 58 L50 15 L73 58",
-    "M30 82 L18 82 L18 70 L24 65 L50 78 L76 65 L82 70 L82 82 L70 82",
+    "M50 11.43 L74.16 52.74 L66.3 57.69 L50 29.93 L33.7 57.69 L25.84 52.74Z",
+    "M50 70.28 L75.77 55.76 L87.6 76.41 L67.59 88.57 L63.07 81.15 L75.12 73.4 L72.22 68.67 L50 81.04 L27.78 68.67 L24.88 73.4 L36.93 81.15 L32.41 88.57 L12.4 76.41 L24.23 55.76Z",
   ];
 
   /* ---------- Geometría: panal de tubos LED en el plano del techo ---------- */
@@ -207,11 +207,8 @@
       ctx.save();
       ctx.translate(-60, -128);
       ctx.scale(1.2, 1.2);
-      ctx.strokeStyle = ink;
-      ctx.lineWidth = 7.5;
-      ctx.lineJoin = "miter";
-      ctx.miterLimit = 10;
-      LOGO_PATHS.forEach(p => ctx.stroke(new Path2D(p)));
+      ctx.fillStyle = ink;
+      LOGO_PATHS.forEach(p => ctx.fill(new Path2D(p)));
       ctx.restore();
 
       // frase debajo
@@ -438,7 +435,7 @@
 
 
   // posición del logo en la capa (centro u, centro v, tamaño en alto) y su trazado dentro de la textura
-  const LOGO_TEX = [10.24 * 1.2, -0.1 * 1024, -0.085 * 1024 + 40];
+  const LOGO_TEX = [11.6, 512 - 50 * 11.6, 512 - 50 * 11.6]; // logo centrado en la textura 1024, con margen
   const capeLogoRect = aspect => aspect > 1.1 ? [0.72, 0.5, 0.36] : [0.5, 0.26, 0.24];
 
   /* =========================================================
@@ -582,8 +579,8 @@
     const lx = lc.getContext("2d");
     lx.fillStyle = "#000"; lx.fillRect(0, 0, 1024, 1024);
     lx.setTransform(LOGO_TEX[0], 0, 0, LOGO_TEX[0], LOGO_TEX[1], LOGO_TEX[2]);
-    lx.strokeStyle = "#fff"; lx.lineWidth = 7.5; lx.lineJoin = "miter"; lx.miterLimit = 10;
-    LOGO_PATHS.forEach(p => lx.stroke(new Path2D(p)));
+    lx.fillStyle = "#fff";
+    LOGO_PATHS.forEach(p => lx.fill(new Path2D(p)));
     const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, lc);
     gl.generateMipmap(gl.TEXTURE_2D);
@@ -699,9 +696,10 @@
       // halo amplio y difuminado: el pelo se va aclarando antes de llegar al logo y nunca lo pisa
       c.strokeStyle = "#fff"; c.lineJoin = "round"; c.lineCap = "round";
       c.filter = `blur(${Math.round(side * 0.035)}px)`;
-      c.lineWidth = 7.5 + 70; LOGO_PATHS.forEach(p => c.stroke(new Path2D(p)));
+      c.fillStyle = "#fff";
+      c.lineWidth = 70; LOGO_PATHS.forEach(p => { const q = new Path2D(p); c.fill(q); c.stroke(q); });
       c.filter = "none";
-      c.lineWidth = 7.5 + 40; LOGO_PATHS.forEach(p => c.stroke(new Path2D(p)));
+      c.lineWidth = 40; LOGO_PATHS.forEach(p => { const q = new Path2D(p); c.fill(q); c.stroke(q); });
       const data = c.getImageData(0, 0, W, H).data;
       return (x, y) => { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= H) return 0; return data[(y * W + x) * 4 + 3] / 255; };
     }
