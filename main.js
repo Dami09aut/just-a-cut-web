@@ -719,7 +719,6 @@
       const onLogo = logoMask();
       strands = []; grid = new Map(); cutCount = 0; finished = false;
       // mechones: grupos de pelos con la misma caída, como pelo recién cortado sobre la capa
-      const n = Math.round(W * H / (W < 700 ? 70 : LOW_END ? 85 : 52));
       const add = (x, y, a, len, w, tone) => {
         const ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len;
         const lim = Math.random() * 0.85;
@@ -728,24 +727,24 @@
         const st = { x, y, ex, ey, cx: (x + ex) / 2 - Math.sin(a) * bend, cy: (y + ey) / 2 + Math.cos(a) * bend, a, len,
           tone, col: TONE_COL[tone], w, cut: false };
         strands.push(st);
-        const key = ((x / CELL) | 0) + "," + ((y / CELL) | 0);
+        const key = (((x + ex) / 2 / CELL) | 0) + "," + (((y + ey) / 2 / CELL) | 0);
         (grid.get(key) || grid.set(key, []).get(key)).push(st);
       };
       const pickTone = () => { const r = Math.random(); return r < 0.06 ? 4 : r < 0.26 ? 3 : r < 0.52 ? 2 : r < 0.78 ? 1 : 0; };
-      let made = 0;
-      while (made < n) {
-        const x0 = Math.random() * W, y0 = Math.random() * H;
-        if (Math.random() < 0.3) { // pelitos sueltos y cortos
-          add(x0, y0, Math.random() * Math.PI * 2, 3 + Math.random() * 6, 0.5 + Math.random() * 0.3, pickTone()); made++; continue;
-        }
-        const k = 5 + (Math.random() * 12 | 0), base = flow(x0, y0) + (Math.random() - 0.5) * 0.8;
-        const L = 10 + Math.random() * 16, spread = 3 + Math.random() * 7, tone = pickTone();
+      // reparto en rejilla con desorden: cubre toda la capa sin huecos
+      const STEP = W < 700 ? 16 : LOW_END ? 17 : 14;
+      for (let gy = -STEP; gy < H + STEP; gy += STEP) for (let gx = -STEP; gx < W + STEP; gx += STEP) {
+        const x0 = gx + Math.random() * STEP, y0 = gy + Math.random() * STEP;
+        const base = flow(x0, y0) + (Math.random() - 0.5) * 0.7, tone = pickTone();
+        const k = 2 + (Math.random() * 4 | 0), L = 20 + Math.random() * 22;
         for (let j = 0; j < k; j++) {
           const t = Math.min(4, Math.max(0, tone + (Math.random() < 0.3 ? (Math.random() < 0.5 ? -1 : 1) : 0)));
-          add(x0 + (Math.random() - 0.5) * spread * 2, y0 + (Math.random() - 0.5) * spread * 2,
-            base + (Math.random() - 0.5) * 0.35, L * (0.6 + Math.random() * 0.6), 0.45 + Math.random() * 0.55, t);
+          // el pelo empieza detrás del punto para que el mechón quede centrado
+          const len = L * (0.6 + Math.random() * 0.6), aa = base + (Math.random() - 0.5) * 0.3;
+          add(x0 + (Math.random() - 0.5) * 8 - Math.cos(aa) * len / 2, y0 + (Math.random() - 0.5) * 8 - Math.sin(aa) * len / 2,
+            aa, len, 0.45 + Math.random() * 0.55, t);
         }
-        made += k;
+        if (Math.random() < 0.35) add(x0 + Math.random() * STEP, y0 + Math.random() * STEP, Math.random() * 6.28, 4 + Math.random() * 7, 0.5, pickTone());
       }
       total = strands.length || 1;
       drawAll();
