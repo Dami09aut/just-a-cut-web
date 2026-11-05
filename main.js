@@ -695,10 +695,14 @@
       const cy = (0.5 - (v - 0.5) * 2.5 / 2.24) * H;
       const k = side / 1024;
       c.setTransform(k * LOGO_TEX[0], 0, 0, k * LOGO_TEX[0], cx - side / 2 + k * LOGO_TEX[1], cy - side / 2 + k * LOGO_TEX[2]);
-      c.strokeStyle = "#fff"; c.lineWidth = 7.5 + 9; c.lineJoin = "round"; c.lineCap = "round";
-      LOGO_PATHS.forEach(p => c.stroke(new Path2D(p)));
+      // halo amplio y difuminado: el pelo se va aclarando antes de llegar al logo y nunca lo pisa
+      c.strokeStyle = "#fff"; c.lineJoin = "round"; c.lineCap = "round";
+      c.filter = `blur(${Math.round(side * 0.035)}px)`;
+      c.lineWidth = 7.5 + 70; LOGO_PATHS.forEach(p => c.stroke(new Path2D(p)));
+      c.filter = "none";
+      c.lineWidth = 7.5 + 40; LOGO_PATHS.forEach(p => c.stroke(new Path2D(p)));
       const data = c.getImageData(0, 0, W, H).data;
-      return (x, y) => { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= H) return false; return data[(y * W + x) * 4 + 3] > 10; };
+      return (x, y) => { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= H) return 0; return data[(y * W + x) * 4 + 3] / 255; };
     }
 
     function flow(x, y) {
@@ -714,20 +718,34 @@
       R = W < 700 ? 26 : 22;
       const onLogo = logoMask();
       strands = []; grid = new Map(); cutCount = 0; finished = false;
-      const n = Math.round(W * H / (W < 700 ? 150 : LOW_END ? 170 : 120));
-      for (let i = 0; i < n; i++) {
-        const x = Math.random() * W, y = Math.random() * H;
-        const a = flow(x, y) + (Math.random() - 0.5) * 0.9;
-        const len = 7 + Math.random() * 15;
+      // mechones: grupos de pelos con la misma caída, como pelo recién cortado sobre la capa
+      const n = Math.round(W * H / (W < 700 ? 70 : LOW_END ? 85 : 52));
+      const add = (x, y, a, len, w, tone) => {
         const ex = x + Math.cos(a) * len, ey = y + Math.sin(a) * len;
-        if (onLogo(x, y) || onLogo(ex, ey) || onLogo((x + ex) / 2, (y + ey) / 2)) continue;
-        const bend = (Math.random() - 0.5) * len * 0.5;
-        const r = Math.random(), tone = r < 0.07 ? 4 : r < 0.3 ? 3 : r < 0.55 ? 2 : r < 0.8 ? 1 : 0;
-        const s = { x, y, ex, ey, cx: (x + ex) / 2 - Math.sin(a) * bend, cy: (y + ey) / 2 + Math.cos(a) * bend, a, len,
-          tone, col: TONE_COL[tone], w: TONES[tone][1], cut: false };
-        strands.push(s);
+        const lim = Math.random() * 0.85;
+        if (onLogo(x, y) > lim || onLogo(ex, ey) > lim || onLogo((x + ex) / 2, (y + ey) / 2) > lim) return;
+        const bend = (Math.random() - 0.5) * len * 0.45;
+        const st = { x, y, ex, ey, cx: (x + ex) / 2 - Math.sin(a) * bend, cy: (y + ey) / 2 + Math.cos(a) * bend, a, len,
+          tone, col: TONE_COL[tone], w, cut: false };
+        strands.push(st);
         const key = ((x / CELL) | 0) + "," + ((y / CELL) | 0);
-        (grid.get(key) || grid.set(key, []).get(key)).push(s);
+        (grid.get(key) || grid.set(key, []).get(key)).push(st);
+      };
+      const pickTone = () => { const r = Math.random(); return r < 0.06 ? 4 : r < 0.26 ? 3 : r < 0.52 ? 2 : r < 0.78 ? 1 : 0; };
+      let made = 0;
+      while (made < n) {
+        const x0 = Math.random() * W, y0 = Math.random() * H;
+        if (Math.random() < 0.3) { // pelitos sueltos y cortos
+          add(x0, y0, Math.random() * Math.PI * 2, 3 + Math.random() * 6, 0.5 + Math.random() * 0.3, pickTone()); made++; continue;
+        }
+        const k = 5 + (Math.random() * 12 | 0), base = flow(x0, y0) + (Math.random() - 0.5) * 0.8;
+        const L = 10 + Math.random() * 16, spread = 3 + Math.random() * 7, tone = pickTone();
+        for (let j = 0; j < k; j++) {
+          const t = Math.min(4, Math.max(0, tone + (Math.random() < 0.3 ? (Math.random() < 0.5 ? -1 : 1) : 0)));
+          add(x0 + (Math.random() - 0.5) * spread * 2, y0 + (Math.random() - 0.5) * spread * 2,
+            base + (Math.random() - 0.5) * 0.35, L * (0.6 + Math.random() * 0.6), 0.45 + Math.random() * 0.55, t);
+        }
+        made += k;
       }
       total = strands.length || 1;
       drawAll();
@@ -736,19 +754,24 @@
     }
 
     function drawAll() {
-      // todo el pelo en pocas pasadas: una sombra y 5 tonos, cada uno un solo trazo
+      // todo el pelo en pocas pasadas: sombra, 5 tonos y un brillo fino
       hctx.clearRect(0, 0, W, H);
       hctx.lineCap = "round";
-      const shadow = new Path2D(), tones = [0, 1, 2, 3, 4].map(() => new Path2D());
+      const shadow = new Path2D(), shine = new Path2D(), tones = TONES.map(() => [new Path2D(), new Path2D()]);
       for (const s of strands) {
-        shadow.moveTo(s.x + 0.8, s.y + 1.2); shadow.quadraticCurveTo(s.cx + 0.8, s.cy + 1.2, s.ex + 0.8, s.ey + 1.2);
-        const t = tones[s.tone]; t.moveTo(s.x, s.y); t.quadraticCurveTo(s.cx, s.cy, s.ex, s.ey);
+        shadow.moveTo(s.x + 0.9, s.y + 1.3); shadow.quadraticCurveTo(s.cx + 0.9, s.cy + 1.3, s.ex + 0.9, s.ey + 1.3);
+        const t = tones[s.tone][s.w > 0.75 ? 1 : 0]; t.moveTo(s.x, s.y); t.quadraticCurveTo(s.cx, s.cy, s.ex, s.ey);
+        if (s.tone >= 2 && s.len > 9) { // brillo en el tramo central del pelo
+          const mx = (s.x + 2 * s.cx + s.ex) / 4, my = (s.y + 2 * s.cy + s.ey) / 4, h = s.len * 0.18;
+          shine.moveTo(mx - Math.cos(s.a) * h - 0.3, my - Math.sin(s.a) * h - 0.3); shine.lineTo(mx + Math.cos(s.a) * h - 0.3, my + Math.sin(s.a) * h - 0.3);
+        }
       }
-      hctx.strokeStyle = "rgba(0,0,0,.55)"; hctx.lineWidth = 1.9; hctx.stroke(shadow);
-      TONES.forEach((c, i) => { hctx.strokeStyle = c[0]; hctx.lineWidth = c[1]; hctx.stroke(tones[i]); });
+      hctx.strokeStyle = "rgba(0,0,0,.6)"; hctx.lineWidth = 1.8; hctx.stroke(shadow);
+      TONES.forEach((c, i) => { hctx.strokeStyle = c; hctx.lineWidth = 0.6; hctx.stroke(tones[i][0]); hctx.lineWidth = 0.95; hctx.stroke(tones[i][1]); });
+      hctx.strokeStyle = "rgba(255,255,255,.35)"; hctx.lineWidth = 0.45; hctx.stroke(shine);
     }
-    const TONES = [["rgba(78,78,78,.9)", 0.8], ["rgba(102,102,102,.9)", 0.9], ["rgba(128,128,128,.9)", 0.8], ["rgba(155,155,155,.9)", 0.7], ["rgba(205,205,205,.75)", 0.6]];
-    const TONE_COL = [78, 102, 128, 155, 205];
+    const TONES = ["rgba(70,70,70,.92)", "rgba(96,96,96,.92)", "rgba(124,124,124,.92)", "rgba(156,156,156,.9)", "rgba(210,210,210,.78)"];
+    const TONE_COL = [70, 96, 124, 156, 210];
 
     const falling = [];
     function cutAt(x0, y0, x1, y1) {

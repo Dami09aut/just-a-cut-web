@@ -793,3 +793,26 @@ body.is-ready .pole-rail { opacity: 1; }
 /* equipos modestos o movimiento reducido: menos efectos */
 .low-end .nav, .low-end .nav.is-scrolled { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
 .low-end .stars-lg svg { animation: none; }
+
+/* ---------- Títulos: mayúsculas condensadas + cursiva serif + contorno ---------- */
+:root { --serif: "Instrument Serif", "Times New Roman", serif; }
+.h2 .t-caps { display: inline-block; }
+.h2 .t-serif {
+  font-family: var(--serif); font-style: italic; font-weight: 400; text-transform: none;
+  letter-spacing: -.02em; line-height: .85; display: inline-block; font-size: 1.12em;
+}
+.h2 .t-outline { color: transparent; -webkit-text-stroke: 1.5px rgba(255,255,255,.9); display: inline-block; }
+.h2 .t-dot { font-style: normal; color: #fff; opacity: .35; }
+.h2.h2-stack > * { display: block; }
+.h2-stack .t-sm { font-size: .62em; margin-bottom: .08em; color: #bdbdbd; }
+.h2-stack .t-line { display: block; }
+.h2-mix .t-serif { margin-left: .04em; }
+/* capa: frase pequeña en mayúsculas espaciadas y la respuesta enorme en cursiva */
+.h2-cape .t-sm {
+  display: block; font-size: clamp(16px, 1.7vw, 22px); font-weight: 600; letter-spacing: .32em; line-height: 1.4;
+  color: #cfcfcf; margin-bottom: .7em; padding-bottom: .7em; border-bottom: 1px solid rgba(255,255,255,.22); width: max-content; max-width: 100%;
+}
+.h2-cape .t-xl { display: block; font-size: clamp(64px, 9.2vw, 138px); line-height: .82; }
+.h2 .t-serif, .h2 .t-outline { transition: letter-spacing 1.2s var(--ease); }
+.reveal:not(.is-in) .t-serif { letter-spacing: .04em; }
+@media (max-width: 640px) { .h2 .t-outline { -webkit-text-stroke-width: 1.1px; } .h2-cape .t-sm { letter-spacing: .22em; } }
