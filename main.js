@@ -4,6 +4,7 @@
 (() => {
   "use strict";
 
+  const T = (s, v) => (window.JAC_I18N ? window.JAC_I18N.t(s, v) : s.replace(/\{(\w+)\}/g, (m, k) => (v && k in v ? v[k] : m)));
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   // bucle de animación que se duerme solo cuando no hay nada que mover
   const idleLoop = step => { let on = false; const f = now => { if (step(now)) requestAnimationFrame(f); else on = false; }; return () => { if (!on) { on = true; requestAnimationFrame(f); } }; };
@@ -911,7 +912,7 @@
   toggle.addEventListener("click", () => {
     const open = toggle.getAttribute("aria-expanded") !== "true";
     toggle.setAttribute("aria-expanded", String(open));
-    toggle.setAttribute("aria-label", open ? "Cerrar menú" : "Abrir menú");
+    toggle.setAttribute("aria-label", T(open ? "Cerrar menú" : "Abrir menú"));
     links.classList.toggle("is-open", open);
     body.style.overflow = open ? "hidden" : "";
   });
@@ -1111,12 +1112,13 @@
   const toast = document.createElement("div");
   toast.className = "book-toast";
   toast.setAttribute("role", "status");
-  toast.innerHTML = '<img src="assets/logo.svg" alt="" width="22" height="22"><span>Abriendo la reserva online…</span>';
+  toast.innerHTML = '<img src="assets/logo.svg" alt="" width="22" height="22"><span></span>';
   document.body.appendChild(toast);
   let toastT;
   document.querySelectorAll(".js-book").forEach(a => {
     a.setAttribute("target", "_blank"); a.setAttribute("rel", "noopener");
     a.addEventListener("click", () => {
+      toast.querySelector("span").textContent = T("Abriendo la reserva online…");
       toast.classList.add("is-on"); clearTimeout(toastT);
       toastT = setTimeout(() => toast.classList.remove("is-on"), 2200);
     });
@@ -1136,7 +1138,13 @@
       5: [[600, 1080]],
       6: [[570, 840]],
     };
-    const DAYS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+    // nombre del día en el idioma activo (5 nov 2026 es jueves: base para calcular el resto)
+    const dayName = d => {
+      const lang = (window.JAC_I18N && window.JAC_I18N.lang) || "es";
+      const base = new Date(Date.UTC(2026, 10, 1 + d, 12)); // 1 nov 2026 = domingo
+      const n = new Intl.DateTimeFormat(lang, { weekday: "long", timeZone: "UTC" }).format(base);
+      return lang === "de" ? n : n.toLowerCase();
+    };
     const fmt = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
     function now() {
       const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Atlantic/Canary", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date());
@@ -1149,14 +1157,18 @@
       const slot = H[day].find(([a, b]) => min >= a && min < b);
       let text, open = !!slot;
       if (slot) {
-        text = `<strong>Abierto ahora</strong> · cierra a las ${fmt(slot[1])}`;
+        text = `<strong>${T("Abierto ahora")}</strong> · ${T("cierra a las {t}", { t: fmt(slot[1]) })}`;
       } else {
         const later = H[day].find(([a]) => a > min);
-        if (later) text = `<strong>Cerrado</strong> · abre hoy a las ${fmt(later[0])}`;
+        if (later) text = `<strong>${T("Cerrado")}</strong> · ${T("abre hoy a las {t}", { t: fmt(later[0]) })}`;
         else {
           for (let i = 1; i <= 7; i++) {
             const d = (day + i) % 7;
-            if (H[d].length) { text = `<strong>Cerrado</strong> · abre ${i === 1 ? "mañana" : "el " + DAYS[d]} a las ${fmt(H[d][0][0])}`; break; }
+            if (H[d].length) {
+              const t = fmt(H[d][0][0]);
+              text = `<strong>${T("Cerrado")}</strong> · ${i === 1 ? T("abre mañana a las {t}", { t }) : T("abre el {d} a las {t}", { d: dayName(d), t })}`;
+              break;
+            }
           }
         }
       }
@@ -1169,6 +1181,7 @@
     }
     update();
     setInterval(update, 30000);
+    if (window.JAC_I18N) window.JAC_I18N.onChange(update);
   })();
 
   /* ---------- Galería: foco de color ---------- */

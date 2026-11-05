@@ -1021,3 +1021,54 @@ body.is-ready .pole-rail { opacity: 1; }
 .story-item p { margin: 10px 0 0; color: #bdbdbd; font-weight: 300; line-height: 1.6; }
 .story-item:nth-child(2) { margin-top: 60px; }
 @media (max-width: 760px) { .story-list { grid-template-columns: 1fr; } .story-item:nth-child(2) { margin-top: 0; } }
+
+/* =========================================================
+   IDIOMAS
+   ========================================================= */
+html.i18n-wait body { opacity: 0; }
+body { transition: opacity .35s ease; }
+.nav-links { margin-inline-start: auto; }
+.lang { position: relative; z-index: 3; margin-inline-start: 28px; }
+.lang-btn {
+  display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px;
+  background: transparent; color: #fff; border: 1px solid var(--line-strong); border-radius: 999px;
+  font: 600 11px/1 var(--body); letter-spacing: .2em; cursor: pointer;
+  transition: background .3s, color .3s, border-color .3s;
+}
+.lang-btn:hover, .lang.is-open .lang-btn { background: #fff; color: #000; border-color: #fff; }
+.lang-menu {
+  position: absolute; top: calc(100% + 10px); inset-inline-end: 0; min-width: 200px; margin: 0; padding: 8px;
+  list-style: none; background: #000; border: 1px solid var(--line-strong);
+  opacity: 0; visibility: hidden; transform: translateY(-6px);
+  transition: opacity .3s var(--ease), transform .3s var(--ease), visibility .3s;
+}
+.lang.is-open .lang-menu { opacity: 1; visibility: visible; transform: none; }
+.lang-menu button {
+  width: 100%; display: flex; align-items: center; gap: 14px; padding: 11px 12px;
+  background: none; border: 0; color: #cfcfcf; cursor: pointer; text-align: start; font: 400 14px/1.2 var(--body);
+  transition: background .25s, color .25s;
+}
+.lang-menu button:hover { background: #fff; color: #000; }
+.lang-menu button[aria-current="true"] { color: #fff; }
+.lang-menu button[aria-current="true"] .lang-code::after { content: " •"; }
+.lang-code { font: 700 11px/1 var(--body); letter-spacing: .18em; width: 30px; opacity: .7; }
+.lang-menu button[lang="ar"] .lang-name { font-family: "Noto Sans Arabic", var(--body); }
+@media (max-width: 860px) {
+  .lang { margin-inline-start: auto; margin-inline-end: 6px; }
+  .lang-btn { height: 36px; padding: 0 12px; }
+}
+.legal-actions { display: flex; align-items: center; gap: 12px; }
+.legal-actions .lang { margin: 0; }
+@media (max-width: 520px) { .legal-back { padding: 10px 12px; font-size: 11px; } .legal-nav .nav-brand span { display: none; } }
+
+/* Árabe: tipografías con glifos árabes y sin espaciado entre letras */
+html[lang="ar"] {
+  --display: "Big Shoulders Display", "Noto Kufi Arabic", "Arial Narrow", sans-serif;
+  --body: "Manrope", "Noto Sans Arabic", system-ui, sans-serif;
+  --serif: "Instrument Serif", "Noto Kufi Arabic", serif;
+}
+html[lang="ar"] body *:not(.lang-code):not(.lang-btn):not(.nav-brand span) { letter-spacing: 0 !important; }
+html[lang="ar"] em, html[lang="ar"] .t-serif, html[lang="ar"] .cookie-title em { font-style: normal; }
+html[lang="ar"] .h2 .t-serif { font-weight: 500; }
+/* el logotipo y las marcas siempre de izquierda a derecha */
+html[dir="rtl"] .sign-row, html[dir="rtl"] .nav-brand, html[dir="rtl"] .intro { direction: ltr; }
