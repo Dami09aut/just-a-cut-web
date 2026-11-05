@@ -921,6 +921,41 @@
     body.style.overflow = "";
   }));
 
+  // scroll suave con easing entre secciones, compensando la cabecera fija
+  {
+    const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    let anim = 0;
+    const stop = () => cancelAnimationFrame(anim);
+    document.addEventListener("click", e => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a || e.defaultPrevented || e.metaKey || e.ctrlKey) return;
+      const id = a.getAttribute("href");
+      if (id.length < 2) return;
+      const el = document.getElementById(id.slice(1));
+      if (!el) return;
+      e.preventDefault();
+      const nav = document.getElementById("nav");
+      const off = id === "#inicio" ? 0 : (nav ? nav.offsetHeight : 0);
+      const start = window.scrollY;
+      const end = Math.max(0, el.getBoundingClientRect().top + start - off);
+      const dist = end - start;
+      if (reduceMotion || Math.abs(dist) < 2) { window.scrollTo(0, end); return; }
+      const dur = Math.min(1600, Math.max(700, Math.abs(dist) * .35));
+      const root = document.documentElement;
+      root.style.scrollBehavior = "auto";
+      stop();
+      const t0 = performance.now();
+      const step = now => {
+        const p = Math.min(1, (now - t0) / dur);
+        window.scrollTo(0, start + dist * ease(p));
+        if (p < 1) anim = requestAnimationFrame(step);
+        else { root.style.scrollBehavior = ""; history.replaceState(null, "", id); }
+      };
+      anim = requestAnimationFrame(step);
+    });
+    ["wheel", "touchstart", "keydown"].forEach(ev => window.addEventListener(ev, () => { stop(); document.documentElement.style.scrollBehavior = ""; }, { passive: true }));
+  }
+
   /* ---------- Interacción de escritorio ---------- */
   if (finePointer && !reduceMotion) {
     body.classList.add("has-cursor");
