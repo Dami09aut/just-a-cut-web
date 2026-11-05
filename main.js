@@ -1060,31 +1060,6 @@
       });
     });
 
-    // servicios: vista previa de foto que sigue al cursor
-    const list = document.querySelector(".service-list");
-    const preview = document.createElement("div");
-    preview.className = "service-preview";
-    preview.innerHTML = "<img alt=''>";
-    document.body.appendChild(preview);
-    const pimg = preview.querySelector("img");
-    let px = 0, py = 0, tx = 0, ty = 0, pv = false, rot = 0;
-    list.querySelectorAll(".service").forEach(s => {
-      s.addEventListener("pointerenter", () => {
-        const src = s.getAttribute("data-img");
-        if (src && pimg.getAttribute("src") !== src) pimg.setAttribute("src", src);
-        pv = true; preview.classList.add("is-on");
-      });
-    });
-    list.addEventListener("pointerleave", () => { pv = false; preview.classList.remove("is-on"); });
-    const kickPrev = idleLoop(() => {
-      const nx = lerp(px, tx, 0.14), ny = lerp(py, ty, 0.14);
-      rot = lerp(rot, clamp((nx - px) * 0.6, -12, 12), 0.2);
-      px = nx; py = ny;
-      preview.style.transform = `translate3d(${px}px, ${py}px, 0) translate(-50%, -50%) rotate(${rot.toFixed(2)}deg)`;
-      return Math.abs(px - tx) + Math.abs(py - ty) + Math.abs(rot) > 0.2;
-    });
-    list.addEventListener("pointermove", e => { tx = e.clientX; ty = e.clientY; if (!pv) { px = tx; py = ty; } kickPrev(); });
-
     // logo neón: brilla más cuando el cursor se acerca
     const neon = document.querySelector(".hero-sign");
     if (neon) {
