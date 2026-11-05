@@ -433,198 +433,212 @@
 
 
   /* =========================================================
-     LA CAPA: tela simulada (Verlet) con el logo, ondeando al viento
+     LA CAPA: bandera gigante de fondo (WebGL, tela iluminada)
      ========================================================= */
-  function mountCape(canvas) {
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const COLS = 24, ROWS = 28;
-    let W = 0, H = 0, dpr = 1, pts = [], cons = [], spacing = 10, originX = 0, originY = 0;
-    const logoUV = [];
-    // trazos del logo en coordenadas de la tela (u, v entre 0 y 1)
-    const LOGO = [
-      [[27, 58], [50, 15], [73, 58]],
-      [[30, 82], [18, 82], [18, 70], [24, 65], [50, 78], [76, 65], [82, 70], [82, 82], [70, 82]],
-    ];
-    LOGO.forEach(poly => {
-      const out = [];
-      for (let i = 0; i < poly.length - 1; i++) {
-        const [x1, y1] = poly[i], [x2, y2] = poly[i + 1];
-        const n = Math.max(2, Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 4));
-        for (let k = 0; k < n; k++) {
-          const t = k / n;
-          out.push([0.5 + ((lerp(x1, x2, t) - 50) / 100) * 0.42, 0.3 + ((lerp(y1, y2, t) - 50) / 100) * 0.42]);
-        }
+  function mountFlag(canvas) {
+    if (!canvas) return false;
+    const gl = canvas.getContext("webgl", { antialias: true, alpha: false, premultipliedAlpha: false });
+    if (!gl) return false;
+    const section = canvas.closest("section");
+
+    const VS = `
+      precision highp float;
+      attribute vec2 aUv;
+      uniform mat4 uMvp;
+      uniform float uT, uAspect;
+      uniform vec4 uG0, uG1, uG2; // x, y, fuerza, edad
+      varying vec3 vPos; varying vec3 vN; varying vec2 vUv; varying float vZ;
+      float gust(vec4 g, vec2 uv) {
+        vec2 d = (uv - g.xy) * vec2(uAspect, 1.0);
+        float r = length(d);
+        float k = g.z * exp(-g.w * 1.6);
+        return k * exp(-r * 3.2) * sin(r * 16.0 - g.w * 7.0);
       }
-      out.push([0.5 + ((poly[poly.length - 1][0] - 50) / 100) * 0.42, 0.3 + ((poly[poly.length - 1][1] - 50) / 100) * 0.42]);
-      logoUV.push(out);
+      float disp(vec2 uv) {
+        float t = uT;
+        float a = 0.35 + 0.65 * smoothstep(-0.1, 1.0, uv.x);
+        float z = 0.0;
+        z += 0.200 * sin(6.6 * uv.x - 1.55 * t + 1.6 * uv.y);
+        z += 0.110 * sin(12.5 * uv.x - 2.35 * t + 3.1 * uv.y + 1.3);
+        z += 0.070 * sin(9.0 * (uv.x + 0.55 * uv.y) - 1.9 * t + 0.4);
+        z += 0.030 * sin(21.0 * uv.x - 3.4 * t - 2.6 * uv.y);
+        z += 0.012 * sin(29.0 * uv.x + 11.0 * uv.y - 4.6 * t);
+        z *= a;
+        z += 0.04 * sin(2.4 * uv.y + 0.6 * t) * uv.x;
+        z += gust(uG0, uv) + gust(uG1, uv) + gust(uG2, uv);
+        return z;
+      }
+      vec3 surf(vec2 uv) {
+        float h = 2.5, w = h * uAspect * 1.06;
+        float z = disp(uv);
+        // la tela se recoge un poco donde se pliega
+        return vec3((uv.x - 0.5) * w - 0.05 * z, (uv.y - 0.5) * h + 0.03 * z, z);
+      }
+      void main() {
+        vec3 p = surf(aUv);
+        float e = 0.0025;
+        vec3 px = surf(aUv + vec2(e, 0.0)) - surf(aUv - vec2(e, 0.0));
+        vec3 py = surf(aUv + vec2(0.0, e)) - surf(aUv - vec2(0.0, e));
+        vN = normalize(cross(px, py));
+        vPos = p; vUv = aUv; vZ = p.z;
+        gl_Position = uMvp * vec4(p, 1.0);
+      }`;
+    const FS = `
+      precision highp float;
+      uniform sampler2D uLogo;
+      uniform vec4 uLogoRect; // centro u, centro v, tamaño (en alto), aspecto
+      uniform vec3 uCam;
+      varying vec3 vPos; varying vec3 vN; varying vec2 vUv; varying float vZ;
+      float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      void main() {
+        vec3 N = normalize(vN);
+        vec3 V = normalize(uCam - vPos);
+        if (dot(N, V) < 0.0) N = -N;
+        // logo estampado
+        vec2 lp = (vUv - uLogoRect.xy) * vec2(uLogoRect.w, 1.0) / uLogoRect.z + 0.5;
+        float logo = 0.0;
+        if (lp.x > 0.0 && lp.x < 1.0 && lp.y > 0.0 && lp.y < 1.0) logo = texture2D(uLogo, vec2(lp.x, 1.0 - lp.y)).r;
+        // trama del tejido
+        float grain = (hash(floor(vUv * vec2(1400.0, 900.0))) - 0.5) * 0.12;
+        vec3 base = mix(vec3(0.012) * (1.0 + grain), vec3(0.78), logo);
+        // luces: clave arriba a la izquierda, contra a la derecha, relleno frontal
+        vec3 L1 = normalize(vec3(-0.55, 0.65, 0.75));
+        vec3 L2 = normalize(vec3(0.95, 0.05, 0.30));
+        vec3 L3 = normalize(vec3(0.0, -0.3, 1.0));
+        float d1 = max(dot(N, L1), 0.0), d2 = max(dot(N, L2), 0.0), d3 = max(dot(N, L3), 0.0);
+        vec3 col = base * (0.06 + 1.5 * d1 + 0.5 * d2 + 0.2 * d3);
+        // brillo satinado de la tela (amplio) + reflejo más fino
+        vec3 H1 = normalize(L1 + V), H2 = normalize(L2 + V);
+        float s1 = pow(max(dot(N, H1), 0.0), 30.0), s1w = pow(max(dot(N, H1), 0.0), 7.0);
+        float s2 = pow(max(dot(N, H2), 0.0), 70.0);
+        float sheen = mix(1.0, 0.45, logo);
+        col += vec3(0.24 * s1 + 0.035 * s1w + 0.14 * s2) * sheen;
+        // borde: brillo rasante típico del poliéster
+        float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
+        col += vec3(0.025) * fres * (1.0 - logo);
+        // sombra en el fondo de los pliegues
+        col *= mix(0.35, 1.0, smoothstep(-0.22, 0.14, vZ));
+        // tono y gamma
+        col = 1.0 - exp(-col * 1.1);
+        col = pow(col, vec3(1.0 / 2.2));
+        float g = dot(col, vec3(0.333));
+        gl_FragColor = vec4(vec3(g), 1.0);
+      }`;
+    function sh(type, src) {
+      const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(s)); return null; }
+      return s;
+    }
+    const vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, FS);
+    if (!vs || !fs) return false;
+    const prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
+    gl.useProgram(prog);
+
+    // malla
+    const NX = 220, NY = 130;
+    const uv = new Float32Array((NX + 1) * (NY + 1) * 2);
+    for (let j = 0, k = 0; j <= NY; j++) for (let i = 0; i <= NX; i++) { uv[k++] = i / NX; uv[k++] = j / NY; }
+    const idx = new Uint32Array(NX * NY * 6);
+    for (let j = 0, k = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+      const a = j * (NX + 1) + i, b = a + 1, c = a + NX + 1, d = c + 1;
+      idx[k++] = a; idx[k++] = b; idx[k++] = c; idx[k++] = b; idx[k++] = d; idx[k++] = c;
+    }
+    const ext = gl.getExtension("OES_element_index_uint");
+    const idxData = ext ? idx : new Uint16Array(idx);
+    if (!ext && uv.length / 2 > 65535) return false;
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER, uv, gl.STATIC_DRAW);
+    const aUv = gl.getAttribLocation(prog, "aUv"); gl.enableVertexAttribArray(aUv); gl.vertexAttribPointer(aUv, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer()); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idxData, gl.STATIC_DRAW);
+
+    // textura del logo
+    const lc = document.createElement("canvas"); lc.width = lc.height = 1024;
+    const lx = lc.getContext("2d");
+    lx.fillStyle = "#000"; lx.fillRect(0, 0, 1024, 1024);
+    lx.setTransform(10.24 * 1.2, 0, 0, 10.24 * 1.2, -0.1 * 1024, -0.085 * 1024);
+    lx.strokeStyle = "#fff"; lx.lineWidth = 7.5; lx.lineJoin = "miter"; lx.miterLimit = 10;
+    LOGO_PATHS.forEach(p => lx.stroke(new Path2D(p)));
+    const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, lc);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+    const U = n => gl.getUniformLocation(prog, n);
+    const uMvp = U("uMvp"), uT = U("uT"), uAspect = U("uAspect"), uCam = U("uCam"), uLogoRect = U("uLogoRect");
+    const uG = [U("uG0"), U("uG1"), U("uG2")];
+    gl.uniform1i(U("uLogo"), 0);
+    gl.enable(gl.DEPTH_TEST);
+
+    function persp(fov, asp, n, f) {
+      const t = 1 / Math.tan(fov / 2);
+      return [t / asp, 0, 0, 0, 0, t, 0, 0, 0, 0, (f + n) / (n - f), -1, 0, 0, 2 * f * n / (n - f), 0];
+    }
+    function mul(a, b) {
+      const r = new Array(16);
+      for (let c = 0; c < 4; c++) for (let rr = 0; rr < 4; rr++) {
+        let s = 0; for (let k = 0; k < 4; k++) s += a[k * 4 + rr] * b[c * 4 + k]; r[c * 4 + rr] = s;
+      }
+      return r;
+    }
+    const CAMZ = 3.0;
+    let W = 1, H = 1, aspect = 1;
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      W = canvas.clientWidth; H = canvas.clientHeight; aspect = W / Math.max(1, H);
+      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      const fov = 2 * Math.atan(1.12 / CAMZ);
+      const view = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, -CAMZ, 0 + 1];
+      gl.uniformMatrix4fv(uMvp, false, new Float32Array(mul(persp(fov, aspect, 0.1, 20), view)));
+      gl.uniform3f(uCam, 0, 0, CAMZ);
+      gl.uniform1f(uAspect, aspect * 1.06);
+      // el logo va a la derecha en pantallas anchas; abajo en móvil
+      if (aspect > 1.1) gl.uniform4f(uLogoRect, 0.72, 0.5, 0.36, aspect * 1.06);
+      else gl.uniform4f(uLogoRect, 0.5, 0.26, 0.24, aspect * 1.06);
+    }
+
+    const gusts = [[0, 0, 0, 9], [0, 0, 0, 9], [0, 0, 0, 9]];
+    let gi = 0, lastG = 0, lastPx = null;
+    section.addEventListener("pointermove", e => {
+      const r = canvas.getBoundingClientRect();
+      const u = (e.clientX - r.left) / r.width, v = 1 - (e.clientY - r.top) / r.height;
+      const now = performance.now();
+      const sp = lastPx ? Math.hypot(e.clientX - lastPx[0], e.clientY - lastPx[1]) : 0;
+      lastPx = [e.clientX, e.clientY];
+      if (now - lastG > 140 && sp > 2) {
+        lastG = now; gi = (gi + 1) % 3;
+        gusts[gi] = [u, v, Math.min(0.09, 0.025 + sp * 0.0012), 0];
+      }
     });
 
-    function build() {
-      const r = canvas.getBoundingClientRect();
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      W = r.width; H = r.height;
-      canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-      const capeW = Math.min(W * 0.78, H * 0.72);
-      spacing = capeW / (COLS - 1);
-      originX = (W - capeW) / 2;
-      originY = H * 0.1;
-      pts = []; cons = [];
-      for (let j = 0; j < ROWS; j++) {
-        for (let i = 0; i < COLS; i++) {
-          // el cuello de la capa está fruncido: la fila superior es más estrecha
-          const gather = j === 0 ? 0.55 + 0.45 * Math.abs(i / (COLS - 1) - 0.5) * 0 : 1;
-          const x0 = originX + capeW / 2 + (i * spacing - capeW / 2) * (j === 0 ? 0.62 : 1);
-          const y0 = originY + j * spacing * 0.98;
-          pts.push({ x: x0, y: y0, z: 0, px: x0, py: y0, pz: 0, pin: j === 0, ox: x0, oy: y0, g: gather });
-        }
-      }
-      const id = (i, j) => j * COLS + i;
-      for (let j = 0; j < ROWS; j++) for (let i = 0; i < COLS; i++) {
-        if (i < COLS - 1) cons.push([id(i, j), id(i + 1, j), j === 0 ? spacing * 0.62 : spacing]);
-        if (i < COLS - 2 && j > 0) cons.push([id(i, j), id(i + 2, j), spacing * 2 * 0.98]);
-        if (j < ROWS - 1) cons.push([id(i, j), id(i, j + 1), Math.hypot(j === 0 ? (i * spacing - (COLS - 1) * spacing / 2) * 0.38 : 0, spacing * 0.98)]);
-      }
-    }
-    build();
-    window.addEventListener("resize", build);
-
-    const mouse = { x: -1e4, y: -1e4, vx: 0, vy: 0, on: false };
-    const setM = (e) => {
-      const r = canvas.getBoundingClientRect();
-      const x = e.clientX - r.left, y = e.clientY - r.top;
-      if (mouse.on) {
-        // empujón único: se suma a la velocidad de los puntos cercanos
-        const mvx = clamp(x - mouse.x, -40, 40), mvy = clamp(y - mouse.y, -40, 40);
-        const R = Math.max(70, W * 0.12);
-        for (const p of pts) {
-          if (p.pin) continue;
-          const dx = p.x - x, dy = p.y - y, d = Math.hypot(dx, dy);
-          if (d < R) {
-            const k = (1 - d / R) * 0.22;
-            p.px -= mvx * k; p.py -= mvy * k; p.pz += (Math.abs(mvx) + Math.abs(mvy)) * k * 0.4;
-          }
-        }
-      }
-      mouse.x = x; mouse.y = y; mouse.on = true;
-    };
-    canvas.addEventListener("pointermove", setM, { passive: true });
-    canvas.addEventListener("pointerdown", setM, { passive: true });
-    canvas.addEventListener("pointerleave", () => { mouse.on = false; });
-
-    let running = false, t = 0, last = 0;
-    function step(dt) {
-      t += dt;
-      const g = 900 * dt * dt;
-      const gust = 0.6 + 0.4 * Math.sin(t * 0.7) + 0.25 * Math.sin(t * 1.9 + 1.3);
-      for (let k = 0; k < pts.length; k++) {
-        const p = pts[k];
-        if (p.pin) {
-          // el cuello también se mueve un poco, como colgado de una percha
-          p.x = p.ox + Math.sin(t * 1.1) * 3; p.y = p.oy; p.z = 0;
-          continue;
-        }
-        const i = k % COLS, j = (k / COLS) | 0;
-        const vx = (p.x - p.px) * 0.97, vy = (p.y - p.py) * 0.97, vz = (p.z - p.pz) * 0.97;
-        p.px = p.x; p.py = p.y; p.pz = p.z;
-        // viento: ondas que recorren la tela de un lado a otro
-        const wave = Math.sin(t * 2.2 + i * 0.32 + j * 0.18) + 0.6 * Math.sin(t * 3.4 - j * 0.27 + i * 0.12);
-        const fx = (gust * 70 + wave * 45) * dt * dt * (j / ROWS);
-        const fz = (wave * 260) * dt * dt * (j / ROWS);
-        p.x += vx + fx; p.y += vy + g; p.z += vz + fz;
-      }
-      for (let it = 0; it < 10; it++) {
-        for (let c = 0; c < cons.length; c++) {
-          const [a, b, L] = cons[c];
-          const p = pts[a], q = pts[b];
-          const dx = q.x - p.x, dy = q.y - p.y, dz = q.z - p.z;
-          const d = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
-          const diff = (d - L) / d * 0.5;
-          const ox = dx * diff, oy = dy * diff, oz = dz * diff;
-          if (!p.pin) { p.x += ox; p.y += oy; p.z += oz; }
-          if (!q.pin) { q.x -= ox; q.y -= oy; q.z -= oz; }
-        }
-      }
-    }
-    // punto de la tela para (u, v) por interpolación bilineal
-    function at(u, v) {
-      const fx = u * (COLS - 1), fy = v * (ROWS - 1);
-      const i = Math.min(COLS - 2, Math.floor(fx)), j = Math.min(ROWS - 2, Math.floor(fy));
-      const tx = fx - i, ty = fy - j;
-      const a = pts[j * COLS + i], b = pts[j * COLS + i + 1], c = pts[(j + 1) * COLS + i], d = pts[(j + 1) * COLS + i + 1];
-      return {
-        x: lerp(lerp(a.x, b.x, tx), lerp(c.x, d.x, tx), ty),
-        y: lerp(lerp(a.y, b.y, tx), lerp(c.y, d.y, tx), ty),
-      };
-    }
-    function render() {
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.clearRect(0, 0, W, H);
-      // percha
-      const l = pts[0], r = pts[COLS - 1];
-      ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(l.x - 30, l.y - 4); ctx.lineTo(r.x + 30, r.y - 4); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo((l.x + r.x) / 2, l.y - 4); ctx.lineTo((l.x + r.x) / 2, l.y - 40);
-      ctx.arc((l.x + r.x) / 2 + 9, l.y - 40, 9, Math.PI, Math.PI * 1.9); ctx.stroke();
-      // sombra en el suelo
-      const bottom = pts[pts.length - 1].y;
-      const sg = ctx.createRadialGradient(W / 2, bottom + 30, 4, W / 2, bottom + 30, W * 0.4);
-      sg.addColorStop(0, "rgba(255,255,255,.06)"); sg.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = sg; ctx.fillRect(0, bottom - 40, W, 140);
-      // tela: cada celda sombreada según su orientación
-      const LX = -0.35, LY = -0.55, LZ = 0.76;
-      for (let j = 0; j < ROWS - 1; j++) {
-        for (let i = 0; i < COLS - 1; i++) {
-          const a = pts[j * COLS + i], b = pts[j * COLS + i + 1], c = pts[(j + 1) * COLS + i], d = pts[(j + 1) * COLS + i + 1];
-          const ux = b.x - a.x, uy = b.y - a.y, uz = b.z - a.z;
-          const vx = c.x - a.x, vy = c.y - a.y, vz = c.z - a.z;
-          let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
-          const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
-          if (nz < 0) { nx = -nx; ny = -ny; nz = -nz; }
-          const diff = Math.max(0, nx * LX + ny * LY + nz * LZ);
-          const spec = Math.pow(diff, 18) * 70;
-          const v = Math.round(8 + diff * 30 + spec);
-          ctx.fillStyle = `rgb(${v},${v},${v})`;
-          ctx.strokeStyle = ctx.fillStyle;
-          ctx.lineWidth = 0.8;
-          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(d.x, d.y); ctx.lineTo(c.x, c.y); ctx.closePath();
-          ctx.fill(); ctx.stroke();
-        }
-      }
-      // borde inferior con un leve brillo
-      ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let i = 0; i < COLS; i++) { const p = pts[(ROWS - 1) * COLS + i]; i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); }
-      ctx.stroke();
-      // logo blanco estampado
-      const capeW = spacing * (COLS - 1);
-      ctx.strokeStyle = "rgba(245,245,245,.95)";
-      ctx.lineWidth = capeW * 0.032;
-      ctx.lineJoin = "miter"; ctx.lineCap = "butt"; ctx.miterLimit = 6;
-      logoUV.forEach(poly => {
-        ctx.beginPath();
-        poly.forEach(([u, v], k) => { const p = at(u, v); k ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y); });
-        ctx.stroke();
-      });
+    let t = 0, wind = 1, last = performance.now(), running = false;
+    window.addEventListener("scroll", () => { wind = Math.min(wind + 0.08, 2.2); }, { passive: true });
+    function draw(dt) {
+      wind = lerp(wind, 1, 1 - Math.pow(0.4, dt));
+      t += dt * wind;
+      gusts.forEach(g => { g[3] += dt; });
+      gl.uniform1f(uT, t);
+      gusts.forEach((g, i) => gl.uniform4f(uG[i], g[0], g[1], g[2], g[3]));
+      gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      gl.drawElements(gl.TRIANGLES, idx.length, ext ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
     }
     function loop(now) {
       if (!running) return;
-      const dt = Math.min(0.033, (now - last) / 1000 || 0.016);
-      last = now;
-      step(dt);
-      render();
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      draw(dt);
       requestAnimationFrame(loop);
     }
-    // estado inicial asentado
-    for (let k = 0; k < 120; k++) step(1 / 60);
-    render();
-    if (reduceMotion) return;
+    resize(); t = 2.0; draw(0);
+    window.addEventListener("resize", () => { resize(); draw(0); });
+    if (reduceMotion) return true;
     new IntersectionObserver(([en]) => {
       if (en.isIntersecting && !running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
       else if (!en.isIntersecting) running = false;
     }).observe(canvas);
+    return true;
   }
-  mountCape(document.getElementById("cape-canvas"));
+  if (!mountFlag(document.getElementById("cape-canvas"))) document.querySelector(".cape-sec")?.classList.add("no-gl");
 
   /* =========================================================
      UI
@@ -698,27 +712,60 @@
   if (finePointer && !reduceMotion) {
     body.classList.add("has-cursor");
 
-    // cursor hexagonal
+    // cursor de tijeras: cortan al hacer clic
     const cur = document.createElement("div");
     cur.className = "cursor";
-    cur.innerHTML = '<span class="cursor-ring"></span><span class="cursor-dot"></span><span class="cursor-label"></span>';
+    cur.innerHTML = `
+      <svg class="scissors" viewBox="0 0 48 48" width="46" height="46" aria-hidden="true">
+        <g class="blade blade-a">
+          <path d="M19 19 L4.2 2.6 Q2.6 1.8 2.9 3.6 L16.6 20.4 Z" fill="#fff"/>
+          <path d="M19 19 L31.5 26.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+          <circle cx="35.5" cy="29" r="4.8" fill="none" stroke="#fff" stroke-width="2.4"/>
+        </g>
+        <g class="blade blade-b">
+          <path d="M19 19 L2.6 4.2 Q1.8 2.6 3.6 2.9 L20.4 16.6 Z" fill="#fff"/>
+          <path d="M19 19 L26.5 31.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/>
+          <circle cx="29" cy="35.5" r="4.8" fill="none" stroke="#fff" stroke-width="2.4"/>
+        </g>
+        <circle cx="19" cy="19" r="1.7" fill="#000" stroke="#fff" stroke-width="1"/>
+      </svg>
+      <span class="cursor-label"></span>`;
     document.body.appendChild(cur);
-    const ring = cur.querySelector(".cursor-ring");
-    const dot = cur.querySelector(".cursor-dot");
+    const sc = cur.querySelector(".scissors");
     const label = cur.querySelector(".cursor-label");
     let mx = innerWidth / 2, my = innerHeight / 2, rx = mx, ry = my;
     window.addEventListener("pointermove", e => {
       mx = e.clientX; my = e.clientY;
       cur.classList.add("is-on");
-      dot.style.transform = `translate3d(${mx}px, ${my}px, 0)`;
     }, { passive: true });
     document.addEventListener("pointerleave", () => cur.classList.remove("is-on"));
     (function loop() {
-      rx = lerp(rx, mx, 0.18); ry = lerp(ry, my, 0.18);
-      ring.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
-      label.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
+      rx = lerp(rx, mx, 0.45); ry = lerp(ry, my, 0.45);
+      // la punta de las tijeras es el punto exacto del ratón
+      sc.style.transform = `translate3d(${rx - 3}px, ${ry - 3}px, 0)`;
+      label.style.transform = `translate3d(${rx + 30}px, ${ry + 34}px, 0)`;
       requestAnimationFrame(loop);
     })();
+    window.addEventListener("pointerdown", e => {
+      if (e.pointerType !== "mouse") return;
+      cur.classList.remove("is-snip");
+      void cur.offsetWidth;
+      cur.classList.add("is-snip");
+      // pelitos cortados que caen
+      for (let i = 0; i < 5; i++) {
+        const h = document.createElement("i");
+        h.className = "snip-hair";
+        h.style.left = `${e.clientX + (Math.random() * 14 - 7)}px`;
+        h.style.top = `${e.clientY + (Math.random() * 8 - 2)}px`;
+        h.style.setProperty("--dx", `${(Math.random() * 50 - 25).toFixed(0)}px`);
+        h.style.setProperty("--r", `${(Math.random() * 300 - 150).toFixed(0)}deg`);
+        h.style.setProperty("--len", `${(6 + Math.random() * 8).toFixed(0)}px`);
+        h.style.animationDelay = `${(i * 30)}ms`;
+        document.body.appendChild(h);
+        setTimeout(() => h.remove(), 1300);
+      }
+    });
+    cur.addEventListener("animationend", () => cur.classList.remove("is-snip"));
     document.querySelectorAll("a, button").forEach(el => {
       el.addEventListener("pointerenter", () => {
         cur.classList.add("is-link");
@@ -788,35 +835,17 @@
       requestAnimationFrame(ploop);
     })();
 
-    // titular del hero: las letras reaccionan al cursor
-    document.querySelectorAll(".hero-title .line > span").forEach(span => {
-      const nodes = Array.from(span.childNodes);
-      span.textContent = "";
-      nodes.forEach(n => {
-        if (n.nodeType === 3) {
-          n.textContent.split("").forEach(ch => {
-            const c = document.createElement("span");
-            c.className = "ch";
-            c.textContent = ch === " " ? " " : ch;
-            span.appendChild(c);
-          });
-        } else span.appendChild(n);
+    // logo neón: brilla más cuando el cursor se acerca
+    const neon = document.querySelector(".hero-neon");
+    if (neon) {
+      const svg = neon.querySelector(".neon");
+      heroEl.addEventListener("pointermove", e => {
+        const r = svg.getBoundingClientRect();
+        const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+        neon.style.setProperty("--glow", Math.max(0, 1 - d / 420).toFixed(2));
       });
-    });
-    const chars = Array.from(document.querySelectorAll(".hero-title .ch"));
-    heroEl.addEventListener("pointermove", e => {
-      chars.forEach(c => {
-        const r = c.getBoundingClientRect();
-        const dx = e.clientX - (r.left + r.width / 2);
-        const dy = e.clientY - (r.top + r.height / 2);
-        const d = Math.hypot(dx, dy);
-        const k = Math.max(0, 1 - d / 260);
-        c.style.transform = `translate(${(-dx * k * 0.12).toFixed(1)}px, ${(-dy * k * 0.12).toFixed(1)}px)`;
-        c.style.color = k > 0.05 ? `rgba(255,255,255,${(1 - k * 0.85).toFixed(2)})` : "";
-        c.style.webkitTextStroke = k > 0.05 ? `${(k * 2).toFixed(2)}px #fff` : "";
-      });
-    });
-    heroEl.addEventListener("pointerleave", () => chars.forEach(c => { c.style.transform = ""; c.style.color = ""; c.style.webkitTextStroke = ""; }));
+      heroEl.addEventListener("pointerleave", () => neon.style.setProperty("--glow", "0"));
+    }
   }
 
   // sillón: se dibuja al entrar en pantalla
@@ -826,6 +855,14 @@
   });
 
   /* ---------- Postes de barbero: giran más rápido al hacer scroll ---------- */
+  const rail = document.querySelector(".pole-rail");
+  if (rail) {
+    const setP = () => {
+      const max = document.documentElement.scrollHeight - innerHeight;
+      rail.style.setProperty("--p", max > 0 ? (scrollY / max).toFixed(4) : "0");
+    };
+    setP(); window.addEventListener("scroll", setP, { passive: true }); window.addEventListener("resize", setP);
+  }
   const poles = Array.from(document.querySelectorAll(".pole-stripes"));
   if (poles.length && !reduceMotion) {
     let py = 0, last = performance.now(), spin = 0;

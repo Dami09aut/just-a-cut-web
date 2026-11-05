@@ -28,6 +28,9 @@
     <button class="intro-skip" type="button">Saltar intro</button>
   </div>
 
+  <!-- poste de barbero como indicador de progreso del scroll -->
+  <div class="pole-rail" aria-hidden="true"><span class="pole-rail-fill"><span class="pole-stripes"></span></span><span class="pole-rail-label">Scroll</span></div>
+
   <!-- ============ NAV ============ -->
   <header class="nav" id="nav">
     <a href="#inicio" class="nav-brand" aria-label="Just A Cut, inicio">
@@ -35,8 +38,8 @@
       <span>JUST A CUT</span>
     </a>
     <nav class="nav-links" id="nav-links" aria-label="Principal">
-      <a href="#estudio">Estudio</a>
       <a href="#servicios">Servicios</a>
+      <a href="#estudio">Estudio</a>
       <a href="#galeria">Galería</a>
       <a href="#ubicacion">Ubicación</a>
       <a href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener" data-cursor="Reservar" class="js-book btn btn-solid btn-sm">Reservar</a>
@@ -51,9 +54,32 @@
       <div class="hero-vignette" aria-hidden="true"></div>
       <div class="hero-content">
         <p class="eyebrow reveal">Barbería · Santa Cruz de Tenerife</p>
-        <h1 class="hero-title">
-          <span class="line"><span>Just</span></span>
-          <span class="line"><span>A Cut<i class="hex hex-dot" aria-hidden="true"></i></span></span>
+        <h1 class="hero-neon">
+          <span class="sr-only">Just A Cut</span>
+          <span class="neon-halo" aria-hidden="true"></span>
+          <svg class="neon" viewBox="6 4 88 92" aria-hidden="true">
+            <defs>
+              <filter id="neon-blur-l" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+              <filter id="neon-blur-s" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.6"/></filter>
+            </defs>
+            <g class="neon-off" fill="none" stroke-linejoin="miter" stroke-miterlimit="10" stroke-linecap="butt">
+              <path d="M27 58 L50 15 L73 58"/>
+              <path d="M30 82 L18 82 L18 70 L24 65 L50 78 L76 65 L82 70 L82 82 L70 82"/>
+            </g>
+            <g class="neon-tube neon-a" fill="none" stroke-linejoin="miter" stroke-miterlimit="10">
+              <path class="glow-l" filter="url(#neon-blur-l)" d="M27 58 L50 15 L73 58"/>
+              <path class="glow-s" filter="url(#neon-blur-s)" d="M27 58 L50 15 L73 58"/>
+              <path class="core" d="M27 58 L50 15 L73 58"/>
+              <path class="hot" d="M27 58 L50 15 L73 58"/>
+            </g>
+            <g class="neon-tube neon-b" fill="none" stroke-linejoin="miter" stroke-miterlimit="10">
+              <path class="glow-l" filter="url(#neon-blur-l)" d="M30 82 L18 82 L18 70 L24 65 L50 78 L76 65 L82 70 L82 82 L70 82"/>
+              <path class="glow-s" filter="url(#neon-blur-s)" d="M30 82 L18 82 L18 70 L24 65 L50 78 L76 65 L82 70 L82 82 L70 82"/>
+              <path class="core" d="M30 82 L18 82 L18 70 L24 65 L50 78 L76 65 L82 70 L82 82 L70 82"/>
+              <path class="hot" d="M30 82 L18 82 L18 70 L24 65 L50 78 L76 65 L82 70 L82 82 L70 82"/>
+            </g>
+          </svg>
+          <span class="neon-word" aria-hidden="true">Just A Cut</span>
         </h1>
         <p class="hero-sub reveal">Precisión, estilo y un estudio pensado al detalle. Aquí no vienes solo a cortarte el pelo.</p>
         <div class="hero-cta reveal">
@@ -61,8 +87,7 @@
           <a href="#servicios" class="btn btn-ghost">Ver servicios</a>
         </div>
       </div>
-      <div class="pole hero-pole" aria-hidden="true"><span class="pole-cap"></span><span class="pole-glass"><span class="pole-stripes"></span></span><span class="pole-cap"></span></div>
-      <a href="#estudio" class="hero-scroll" aria-label="Bajar"><span></span></a>
+      <a href="#servicios" class="hero-scroll" aria-label="Bajar"><span></span></a>
     </section>
 
     <!-- ============ MARQUEE ============ -->
@@ -75,39 +100,12 @@
       </div>
     </div>
 
-    <!-- ============ ESTUDIO ============ -->
-    <section class="section studio" id="estudio">
-      <div class="container studio-grid">
-        <figure class="studio-media mirror reveal" data-tilt>
-          <div class="tilt-inner">
-            <img src="assets/equipo.png" alt="Los barberos de Just A Cut en el estudio" loading="lazy">
-            <span class="tilt-glare" aria-hidden="true"></span>
-          </div>
-          <figcaption>Reflejo del equipo en el espejo del estudio</figcaption>
-        </figure>
-        <div class="studio-text">
-          <p class="eyebrow reveal">01 · Quiénes somos</p>
-          <h2 class="h2 reveal">Somos<br>Just A Cut.</h2>
-          <p class="lead reveal">Una barbería en el centro de Santa Cruz de Tenerife. Hacemos cortes, degradados y barba con cita previa, para que llegues, te sientes y salgas como querías.</p>
-          <ul class="facts reveal">
-            <li><span class="fact-k">Qué hacemos</span><span class="fact-v">Corte, fade, barba y diseños</span></li>
-            <li><span class="fact-k">Dónde</span><span class="fact-v">C. Buenaventura Bonnet, 14 · 38008</span></li>
-            <li><span class="fact-k">Cómo reservar</span><span class="fact-v">Online, en menos de un minuto</span></li>
-          </ul>
-          <div class="studio-cta reveal">
-            <a href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener" data-cursor="Reservar" class="js-book btn btn-solid">Reservar cita <span aria-hidden="true">→</span></a>
-            <a href="#ubicacion" class="btn btn-ghost">Cómo llegar</a>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ============ SERVICIOS ============ -->
     <section class="section services" id="servicios">
       <div class="container">
         <div class="section-head services-head">
           <div>
-            <p class="eyebrow reveal">02 · Servicios</p>
+            <p class="eyebrow reveal">01 · Servicios</p>
             <h2 class="h2 reveal">Lo que hacemos.<br><span class="muted">Y cómo lo hacemos.</span></h2>
           </div>
           <svg class="chair" viewBox="0 0 200 270" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -126,27 +124,32 @@
           </svg>
         </div>
         <ol class="service-list">
-          <li class="service reveal" data-img="assets/corte.png">
+          <li class="service reveal" data-img="https://images.unsplash.com/photo-1647140655214-e4a2d914971f?auto=format&amp;fit=crop&amp;w=800&amp;h=1000&amp;q=70">
+            <img class="service-thumb" src="https://images.unsplash.com/photo-1647140655214-e4a2d914971f?auto=format&amp;fit=crop&amp;w=240&amp;h=240&amp;q=70" alt="" loading="lazy">
             <span class="service-num">01</span>
             <div><h3>Corte de pelo</h3><p>Clásico o moderno, a tijera o máquina. Asesoramiento según tu cara y tu estilo.</p></div>
             <a href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener" data-cursor="Reservar" class="js-book service-cta" aria-label="Reservar corte de pelo">Reservar →</a>
           </li>
-          <li class="service reveal" data-img="assets/interior.jpg">
+          <li class="service reveal" data-img="https://images.unsplash.com/photo-1541533848490-bc8115cd6522?auto=format&amp;fit=crop&amp;w=800&amp;h=1000&amp;q=70">
+            <img class="service-thumb" src="https://images.unsplash.com/photo-1541533848490-bc8115cd6522?auto=format&amp;fit=crop&amp;w=240&amp;h=240&amp;q=70" alt="" loading="lazy">
             <span class="service-num">02</span>
             <div><h3>Degradado · Fade</h3><p>Skin fade, low, mid o high. Transiciones limpias, sin saltos.</p></div>
             <a href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener" data-cursor="Reservar" class="js-book service-cta" aria-label="Reservar degradado">Reservar →</a>
           </li>
-          <li class="service reveal" data-img="assets/equipo.png">
+          <li class="service reveal" data-img="https://images.unsplash.com/photo-1517832606299-7ae9b720a186?auto=format&amp;fit=crop&amp;w=800&amp;h=1000&amp;q=70">
+            <img class="service-thumb" src="https://images.unsplash.com/photo-1517832606299-7ae9b720a186?auto=format&amp;fit=crop&amp;w=240&amp;h=240&amp;q=70" alt="" loading="lazy">
             <span class="service-num">03</span>
             <div><h3>Barba</h3><p>Perfilado, arreglo y diseño de barba con acabado a navaja y toalla caliente.</p></div>
             <a href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener" data-cursor="Reservar" class="js-book service-cta" aria-label="Reservar barba">Reservar →</a>
           </li>
-          <li class="service reveal" data-img="assets/frase.png">
+          <li class="service reveal" data-img="https://images.unsplash.com/photo-1630827020718-3433092696e7?auto=format&amp;fit=crop&amp;w=800&amp;h=1000&amp;q=70">
+            <img class="service-thumb" src="https://images.unsplash.com/photo-1630827020718-3433092696e7?auto=format&amp;fit=crop&amp;w=240&amp;h=240&amp;q=70" alt="" loading="lazy">
             <span class="service-num">04</span>
             <div><h3>Corte + Barba</h3><p>El servicio completo. Sales listo para lo que tengas por delante.</p></div>
             <a href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener" data-cursor="Reservar" class="js-book service-cta" aria-label="Reservar corte y barba">Reservar →</a>
           </li>
-          <li class="service reveal" data-img="assets/corte.png">
+          <li class="service reveal" data-img="https://images.unsplash.com/photo-1759675905700-a1b5efedc05c?auto=format&amp;fit=crop&amp;w=800&amp;h=1000&amp;q=70">
+            <img class="service-thumb" src="https://images.unsplash.com/photo-1759675905700-a1b5efedc05c?auto=format&amp;fit=crop&amp;w=240&amp;h=240&amp;q=70" alt="" loading="lazy">
             <span class="service-num">05</span>
             <div><h3>Diseños y detalles</h3><p>Líneas, rayas y diseños a medida para quien quiere algo diferente.</p></div>
             <a href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener" data-cursor="Reservar" class="js-book service-cta" aria-label="Reservar diseño">Reservar →</a>
@@ -156,17 +159,45 @@
       </div>
     </section>
 
+
+    <!-- ============ ESTUDIO ============ -->
+    <section class="section studio" id="estudio">
+      <div class="container studio-grid">
+        <figure class="studio-media mirror reveal" data-tilt>
+          <div class="tilt-inner">
+            <img src="assets/equipo.png" alt="Los barberos de Just A Cut en el estudio" loading="lazy">
+            <span class="tilt-glare" aria-hidden="true"></span>
+          </div>
+          <figcaption>Reflejo del equipo en el espejo del estudio</figcaption>
+        </figure>
+        <div class="studio-text">
+          <p class="eyebrow reveal">02 · Quiénes somos</p>
+          <h2 class="h2 reveal">Somos<br>Just A Cut.</h2>
+          <p class="lead reveal">Una barbería en el centro de Santa Cruz de Tenerife. Hacemos cortes, degradados y barba con cita previa, para que llegues, te sientes y salgas como querías.</p>
+          <ul class="facts reveal">
+            <li><span class="fact-k">Qué hacemos</span><span class="fact-v">Corte, fade, barba y diseños</span></li>
+            <li><span class="fact-k">Dónde</span><span class="fact-v">C. Buenaventura Bonnet, 14 · 38008</span></li>
+            <li><span class="fact-k">Cómo reservar</span><span class="fact-v">Online, en menos de un minuto</span></li>
+          </ul>
+          <div class="studio-cta reveal">
+            <a href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener" data-cursor="Reservar" class="js-book btn btn-solid">Reservar cita <span aria-hidden="true">→</span></a>
+            <a href="#ubicacion" class="btn btn-ghost">Cómo llegar</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
     <!-- ============ LA CAPA ============ -->
     <section class="section cape-sec" id="experiencia">
+      <canvas id="cape-canvas" aria-label="Capa negra de Just A Cut con el logo blanco, ondeando como una bandera" role="img"></canvas>
+      <div class="cape-shade" aria-hidden="true"></div>
       <div class="container cape-grid">
         <div class="cape-text">
           <p class="eyebrow reveal">03 · La experiencia</p>
           <h2 class="h2 reveal">Te ponemos<br>la capa.<br><span class="muted">Tú desconectas.</span></h2>
           <p class="lead reveal">Te sientas en el sillón, te ponemos nuestra capa y el resto es cosa nuestra. Sin prisas, sin ruido y con el resultado que viniste a buscar.</p>
           <p class="cape-hint reveal"><i class="hex"></i> Pasa el ratón o el dedo por la capa</p>
-        </div>
-        <div class="cape-stage reveal">
-          <canvas id="cape-canvas" aria-label="Capa negra de Just A Cut con el logo blanco, ondeando" role="img"></canvas>
         </div>
       </div>
     </section>
