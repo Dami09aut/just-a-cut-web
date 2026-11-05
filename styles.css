@@ -1158,3 +1158,16 @@ html[dir="rtl"] .sign-row, html[dir="rtl"] .nav-brand, html[dir="rtl"] .intro { 
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 26px 18px; padding-bottom: 28px; }
   .footer-brand { grid-column: 1 / -1; }
 }
+
+/* Móvil: botones en cápsula y reserva flotante */
+@media (max-width: 700px) {
+  .btn, .service-cta, .map-go, .cookie-box .btn, .barber-social a, .legal-back { border-radius: 999px; }
+  .btn { --h: 50px; padding: 0 26px; }
+  .service-cta { padding: 8px 14px; }
+  .barber-social a { padding: 10px 16px; }
+  .fab {
+    left: 50%; right: auto; width: min(300px, calc(100% - 64px)); height: 54px;
+    translate: -50% 0; border-radius: 999px; gap: 10px;
+    box-shadow: 0 14px 34px rgba(0,0,0,.65), 0 0 0 6px rgba(255,255,255,.08);
+  }
+}
