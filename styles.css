@@ -641,3 +641,53 @@ body.is-ready .pole-rail { opacity: 1; }
   .service-thumb { display: block; grid-row: 1 / span 2; align-self: start; width: 84px; height: 84px; object-fit: cover; filter: grayscale(1) contrast(1.15); background: #111; }
   .service-cta { grid-column: 2; justify-self: start; }
 }
+
+/* ---------- Servicios: grupos y precios ---------- */
+.service-group { font-size: 11px; letter-spacing: .28em; text-transform: uppercase; color: var(--muted); margin: 48px 0 0; padding-bottom: 14px; }
+.service-group:first-of-type { margin-top: 0; }
+.service { grid-template-columns: 80px 1fr auto auto; }
+.service-price { font-family: var(--display); font-weight: 800; font-size: clamp(26px, 2.6vw, 38px); white-space: nowrap; letter-spacing: .02em; }
+.service-time { color: #fff; }
+@media (max-width: 700px) {
+  .service { grid-template-columns: 44px 1fr auto; }
+  .service-price { grid-column: 3; grid-row: 1; align-self: start; font-size: 24px; }
+}
+@media (hover: none) {
+  .service { grid-template-columns: 84px 1fr auto; }
+  .service-price { grid-column: 3; grid-row: 1; align-self: start; font-size: 24px; }
+}
+
+/* ---------- Reseñas: carrusel con estrellas doradas ---------- */
+:root { --gold-1: #f7e3a1; --gold-2: #d4a93c; --gold-3: #8a6416; }
+.reviews { padding: clamp(64px, 9vw, 120px) 0; background: #050505; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; }
+.reviews-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; margin-bottom: 44px; }
+.reviews-head .eyebrow { margin: 0; }
+.reviews-score { display: flex; align-items: center; gap: 22px; }
+.score-num { font-family: var(--display); font-weight: 900; font-size: clamp(72px, 9vw, 120px); line-height: .8; }
+.reviews-score p { margin: 10px 0 0; color: var(--muted); font-size: 14px; }
+.stars { display: inline-flex; gap: 4px; }
+.stars svg { width: 18px; height: 18px; fill: url(#gold); overflow: visible; }
+.stars-lg svg { width: 30px; height: 30px; }
+.stars svg { fill: var(--gold-2); filter: drop-shadow(0 0 6px rgba(240, 200, 90, .45)); animation: starGlow 3.2s ease-in-out infinite; }
+.stars svg:nth-child(2) { animation-delay: .15s; } .stars svg:nth-child(3) { animation-delay: .3s; }
+.stars svg:nth-child(4) { animation-delay: .45s; } .stars svg:nth-child(5) { animation-delay: .6s; }
+@keyframes starGlow {
+  0%, 70%, 100% { fill: var(--gold-2); filter: drop-shadow(0 0 5px rgba(240,200,90,.35)); transform: scale(1); }
+  80% { fill: var(--gold-1); filter: drop-shadow(0 0 12px rgba(255,225,130,.95)) drop-shadow(0 0 3px #fff); transform: scale(1.14); }
+}
+.reviews-viewport { mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent); }
+.reviews-track { display: flex; gap: 20px; width: max-content; animation: reviewsLoop 60s linear infinite; }
+.reviews-viewport:hover .reviews-track { animation-play-state: paused; }
+@keyframes reviewsLoop { to { transform: translateX(calc(-50% - 10px)); } }
+.review {
+  margin: 0; width: clamp(260px, 26vw, 340px); padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 18px;
+  border: 1px solid var(--line-strong); background: linear-gradient(160deg, #111 0%, #080808 100%);
+  transition: border-color .4s, transform .5s var(--ease);
+}
+.review:hover { border-color: rgba(212,169,60,.55); transform: translateY(-4px); }
+.review-text { margin: 0; font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: 30px; line-height: 1; min-height: 1em; }
+.review-text.is-plain { color: var(--muted); font-weight: 700; font-size: 22px; letter-spacing: .04em; }
+.review figcaption { display: flex; flex-direction: column; gap: 4px; margin-top: auto; }
+.review figcaption strong { font-weight: 600; font-size: 16px; }
+.review figcaption span { color: var(--muted); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .reviews-track { animation: none; } .reviews-viewport { overflow-x: auto; } .stars svg { animation: none; } }

@@ -455,16 +455,16 @@
         return k * exp(-r * 3.2) * sin(r * 16.0 - g.w * 7.0);
       }
       float disp(vec2 uv) {
-        float t = uT;
-        float a = 0.35 + 0.65 * smoothstep(-0.1, 1.0, uv.x);
+        float t = uT * 0.62; // ondeo suave
+        float a = 0.55 + 0.45 * smoothstep(-0.1, 1.0, uv.x);
         float z = 0.0;
-        z += 0.200 * sin(6.6 * uv.x - 1.55 * t + 1.6 * uv.y);
-        z += 0.110 * sin(12.5 * uv.x - 2.35 * t + 3.1 * uv.y + 1.3);
-        z += 0.070 * sin(9.0 * (uv.x + 0.55 * uv.y) - 1.9 * t + 0.4);
-        z += 0.030 * sin(21.0 * uv.x - 3.4 * t - 2.6 * uv.y);
-        z += 0.012 * sin(29.0 * uv.x + 11.0 * uv.y - 4.6 * t);
-        z *= a;
-        z += 0.04 * sin(2.4 * uv.y + 0.6 * t) * uv.x;
+        // pliegues grandes y lentos que atraviesan toda la tela (también el logo)
+        z += 0.170 * sin(4.6 * uv.x - 1.25 * t + 1.9 * uv.y);
+        z += 0.095 * sin(7.8 * (uv.x - 0.45 * uv.y) - 1.6 * t + 1.1);
+        z += 0.060 * sin(11.5 * uv.x + 4.0 * uv.y - 2.1 * t + 2.4);
+        z += 0.022 * sin(19.0 * uv.x - 2.9 * t - 3.0 * uv.y);
+        z += 0.050 * sin(3.1 * uv.y - 0.7 * t + 3.0 * uv.x);
+        z *= a * 1.7;
         z += gust(uG0, uv) + gust(uG1, uv) + gust(uG2, uv);
         return z;
       }
@@ -484,52 +484,69 @@
         gl_Position = uMvp * vec4(p, 1.0);
       }`;
     const FS = `
+      #extension GL_OES_standard_derivatives : enable
       precision highp float;
       uniform sampler2D uLogo;
       uniform vec4 uLogoRect; // centro u, centro v, tamaño (en alto), aspecto
       uniform vec3 uCam;
+      uniform vec2 uWeave;    // hilos a lo ancho y a lo alto
       varying vec3 vPos; varying vec3 vN; varying vec2 vUv; varying float vZ;
       float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float noise(vec2 p) {
+        vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+      }
       void main() {
         vec3 N = normalize(vN);
         vec3 V = normalize(uCam - vPos);
         if (dot(N, V) < 0.0) N = -N;
-        // logo estampado
-        vec2 lp = (vUv - uLogoRect.xy) * vec2(uLogoRect.w, 1.0) / uLogoRect.z + 0.5;
-        float logo = 0.0;
-        if (lp.x > 0.0 && lp.x < 1.0 && lp.y > 0.0 && lp.y < 1.0) logo = texture2D(uLogo, vec2(lp.x, 1.0 - lp.y)).r;
-        // trama del tejido
-        float grain = (hash(floor(vUv * vec2(1400.0, 900.0))) - 0.5) * 0.12;
-        vec3 base = mix(vec3(0.012) * (1.0 + grain), vec3(0.78), logo);
-        // luces: clave arriba a la izquierda, contra a la derecha, relleno frontal
-        vec3 L1 = normalize(vec3(-0.55, 0.65, 0.75));
-        vec3 L2 = normalize(vec3(0.95, 0.05, 0.30));
-        vec3 L3 = normalize(vec3(0.0, -0.3, 1.0));
-        float d1 = max(dot(N, L1), 0.0), d2 = max(dot(N, L2), 0.0), d3 = max(dot(N, L3), 0.0);
-        vec3 col = base * (0.06 + 1.5 * d1 + 0.5 * d2 + 0.2 * d3);
-        // brillo satinado de la tela (amplio) + reflejo más fino
+
+        // tejido: urdimbre y trama entrelazadas (tafetán), con hilos irregulares
+        vec2 w = vUv * uWeave;
+        vec2 cell = floor(w), f = fract(w);
+        float over = mod(cell.x + cell.y, 2.0);           // qué hilo pasa por encima
+        float thx = sin(f.y * 3.14159), thy = sin(f.x * 3.14159);
+        float thread = mix(thx, thy, over);               // perfil redondeado del hilo
+        float slub = noise(cell * vec2(0.07, 1.0)) * 0.5 + noise(cell * vec2(1.0, 0.07)) * 0.5;
+        // se desvanece si los hilos son más finos que un píxel (evita moiré)
+        float aa = 1.0 - smoothstep(0.35, 0.7, max(fwidth(w.x), fwidth(w.y)));
+        // el hilo inclina la normal (micro relieve)
+        vec2 tilt = mix(vec2(0.0, cos(f.y * 3.14159)), vec2(cos(f.x * 3.14159), 0.0), over) * 0.55 * aa;
+        vec3 T = normalize(cross(vec3(0.0, 1.0, 0.0), N)), B = cross(N, T);
+        vec3 Nw = normalize(N + T * tilt.x + B * tilt.y);
+
+        // logo estampado (se deforma con la tela porque vive en sus coordenadas)
+        vec2 lp = clamp((vUv - uLogoRect.xy) * vec2(uLogoRect.w, 1.0) / uLogoRect.z + 0.5, 0.0, 1.0);
+        float logo = texture2D(uLogo, vec2(lp.x, 1.0 - lp.y)).r;
+        // la tinta se mete entre los hilos: borde algo roto y textura visible
+        logo *= mix(1.0, 0.82 + 0.18 * thread, aa);
+        logo = smoothstep(0.08, 0.9, logo);
+
+        float fabric = 0.010 * (0.75 + 0.35 * thread * aa + 0.25 * (slub - 0.5));
+        vec3 base = vec3(mix(fabric, 0.62, logo));
+
+        vec3 L1 = normalize(vec3(-0.6, 0.55, 0.58));   // clave rasante desde arriba a la izquierda
+        vec3 L2 = normalize(vec3(0.9, -0.1, 0.42));    // contra suave
+        float d1 = max(dot(Nw, L1), 0.0), d2 = max(dot(Nw, L2), 0.0);
+        vec3 col = base * (0.035 + 1.55 * d1 + 0.4 * d2);
+        // brillo apagado de la tela: ancho y tenue, mayor en la cresta de los hilos
         vec3 H1 = normalize(L1 + V), H2 = normalize(L2 + V);
-        float s1 = pow(max(dot(N, H1), 0.0), 30.0), s1w = pow(max(dot(N, H1), 0.0), 7.0);
-        float s2 = pow(max(dot(N, H2), 0.0), 70.0);
-        float sheen = mix(1.0, 0.45, logo);
-        col += vec3(0.24 * s1 + 0.035 * s1w + 0.14 * s2) * sheen;
-        // borde: brillo rasante típico del poliéster
-        float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
-        col += vec3(0.025) * fres * (1.0 - logo);
+        float s1 = pow(max(dot(Nw, H1), 0.0), 22.0), s2 = pow(max(dot(Nw, H2), 0.0), 34.0);
+        float sheen = mix(1.0, 0.35, logo) * (0.7 + 0.6 * thread * aa);
+        col += vec3(0.055 * s1 + 0.03 * s2) * sheen;
         // sombra en el fondo de los pliegues
-        col *= mix(0.35, 1.0, smoothstep(-0.22, 0.14, vZ));
-        // tono y gamma
-        col = 1.0 - exp(-col * 1.1);
+        col *= mix(0.25, 1.0, smoothstep(-0.34, 0.25, vZ));
+        col = 1.0 - exp(-col * 1.15);
         col = pow(col, vec3(1.0 / 2.2));
-        float g = dot(col, vec3(0.333));
-        gl_FragColor = vec4(vec3(g), 1.0);
+        gl_FragColor = vec4(vec3(dot(col, vec3(0.333))), 1.0);
       }`;
     function sh(type, src) {
       const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
       if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.warn(gl.getShaderInfoLog(s)); return null; }
       return s;
     }
-    const vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, FS);
+    const hasDeriv = !!gl.getExtension("OES_standard_derivatives");
+    const vs = sh(gl.VERTEX_SHADER, VS), fs = sh(gl.FRAGMENT_SHADER, hasDeriv ? FS : FS.replace("#extension GL_OES_standard_derivatives : enable", "").replace(/max\(fwidth\(w\.x\), fwidth\(w\.y\)\)/, "1.0"));
     if (!vs || !fs) return false;
     const prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return false;
@@ -555,7 +572,7 @@
     const lc = document.createElement("canvas"); lc.width = lc.height = 1024;
     const lx = lc.getContext("2d");
     lx.fillStyle = "#000"; lx.fillRect(0, 0, 1024, 1024);
-    lx.setTransform(10.24 * 1.2, 0, 0, 10.24 * 1.2, -0.1 * 1024, -0.085 * 1024);
+    lx.setTransform(10.24 * 1.2, 0, 0, 10.24 * 1.2, -0.1 * 1024, -0.085 * 1024 + 40);
     lx.strokeStyle = "#fff"; lx.lineWidth = 7.5; lx.lineJoin = "miter"; lx.miterLimit = 10;
     LOGO_PATHS.forEach(p => lx.stroke(new Path2D(p)));
     const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -563,9 +580,11 @@
     gl.generateMipmap(gl.TEXTURE_2D);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
     const U = n => gl.getUniformLocation(prog, n);
-    const uMvp = U("uMvp"), uT = U("uT"), uAspect = U("uAspect"), uCam = U("uCam"), uLogoRect = U("uLogoRect");
+    const uMvp = U("uMvp"), uT = U("uT"), uAspect = U("uAspect"), uCam = U("uCam"), uLogoRect = U("uLogoRect"), uWeave = U("uWeave");
     const uG = [U("uG0"), U("uG1"), U("uG2")];
     gl.uniform1i(U("uLogo"), 0);
     gl.enable(gl.DEPTH_TEST);
@@ -593,6 +612,8 @@
       gl.uniformMatrix4fv(uMvp, false, new Float32Array(mul(persp(fov, aspect, 0.1, 20), view)));
       gl.uniform3f(uCam, 0, 0, CAMZ);
       gl.uniform1f(uAspect, aspect * 1.06);
+      // hilos de ~4 px en pantalla
+      gl.uniform2f(uWeave, W * 1.15 / 4.2, H * 1.12 / 4.2);
       // el logo va a la derecha en pantallas anchas; abajo en móvil
       if (aspect > 1.1) gl.uniform4f(uLogoRect, 0.72, 0.5, 0.36, aspect * 1.06);
       else gl.uniform4f(uLogoRect, 0.5, 0.26, 0.24, aspect * 1.06);
