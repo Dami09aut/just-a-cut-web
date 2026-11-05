@@ -72,6 +72,7 @@
         wrap: true,       // techo infinito (ambiente) o sala con pared al fondo (intro)
         wall: null,       // { z, lit } pared del fondo
         interactive: false,
+        trail: 0,
       }, opts);
       const depth = this.o.wall ? this.o.wall.z + 2 : this.o.maxZ + 8;
       const geo = buildHoneycomb({ depth });
@@ -81,6 +82,7 @@
       this.camX = 0;
       this.targetX = 0;
       this.pitchOffset = 0;
+      this.roll = 0;
       this.targetPitchOffset = 0;
       this.boost = 0;               // velocidad extra (scroll)
       this.ptr = { x: -9999, y: -9999, tx: -9999, ty: -9999, on: 0, target: 0 };
@@ -222,7 +224,7 @@
       const dpr = this.dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = o.trail > 0 ? `rgba(0,0,0,${1 - o.trail})` : "#000";
       ctx.fillRect(0, 0, w, h);
       if (o.wall) this.drawWall(t);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -276,8 +278,14 @@
           }
           const zm = (za + zb) / 2;
           if (zm > maxZ) continue;
-          const sx1 = cx + (xa / pza) * f, sy1 = cy - (pya / pza) * f;
-          const sx2 = cx + (xb / pzb) * f, sy2 = cy - (pyb / pzb) * f;
+          let sx1 = (xa / pza) * f, sy1 = -(pya / pza) * f;
+          let sx2 = (xb / pzb) * f, sy2 = -(pyb / pzb) * f;
+          if (this.roll) {
+            const cr = Math.cos(this.roll), sr = Math.sin(this.roll);
+            [sx1, sy1] = [sx1 * cr - sy1 * sr, sx1 * sr + sy1 * cr];
+            [sx2, sy2] = [sx2 * cr - sy2 * sr, sx2 * sr + sy2 * cr];
+          }
+          sx1 += cx; sy1 += cy; sx2 += cx; sy2 += cy;
           if ((sx1 < -60 && sx2 < -60) || (sx1 > w + 60 && sx2 > w + 60) || (sy1 < -60 && sy2 < -60) || (sy1 > h + 60 && sy2 > h + 60)) continue;
           let level = 0;
           if (b < 1) level = 3;
@@ -324,12 +332,12 @@
   }
 
   /* =========================================================
-     INTRO: recorrido lento por el techo hasta la pared del fondo
+     INTRO: entrar volando por los paneles del techo
      ========================================================= */
   const body = document.body;
   const intro = document.getElementById("intro");
   const introCanvas = document.getElementById("intro-canvas");
-  const fade = intro.querySelector(".intro-fade");
+  const flash = intro.querySelector(".intro-flash");
   let introDone = false;
   let introScene = null;
 
@@ -342,7 +350,7 @@
     setTimeout(() => {
       intro.classList.add("is-gone");
       if (introScene) introScene.stop();
-    }, fast ? 800 : 1400);
+    }, fast ? 700 : 1150);
     revealHero();
   }
 
@@ -355,40 +363,37 @@
     introDone = true;
   } else {
     try { sessionStorage.setItem("jac-intro", "1"); } catch (e) { /* sin almacenamiento */ }
-    const TRAVEL = 21;            // metros que recorre la cámara
-    introScene = new HexCeiling(introCanvas, {
-      wrap: false, pitch: 0.3, fov: 0.95, maxZ: 64,
-      wall: { z: TRAVEL + 4.5, lit: 0 },
-    });
-    // distancia final a la pared: que el logo y la frase quepan en pantalla
-    let stopDist = 4.5;
-    const fitStop = () => {
-      const f = introScene.focal();
-      stopDist = Math.max(3.4, (2.0 * f) / (0.8 * introScene.w), (2.3 * f) / (0.62 * introScene.h));
-      introScene.o.wall.z = TRAVEL + stopDist;
-    };
-    introScene.onResize = fitStop;
-    fitStop();
-    introScene.lightsSequence(0.35, 0.055, 0.35);
-
-    const T = { moveStart: 0.5, moveEnd: 6.9, credit: 6.3, leave: 8.7 };
-    let creditShown = false;
-    if (document.fonts && document.fonts.load) document.fonts.load('700 40px "Jost"');
-
+    introScene = new HexCeiling(introCanvas, { speed: 0.6, pitch: 0.22, fov: 0.95, maxZ: 64 });
+    introScene.lightsSequence(0.35, 0.026, 0.4);
+    const T = { lightsEnd: 2.4, accelEnd: 4.5, flash: 4.3, logo: 4.55, leave: 6.6 };
+    let logoShown = false;
     introScene.onTick = (t) => {
       const o = introScene.o;
-      const k = clamp((t - T.moveStart) / (T.moveEnd - T.moveStart), 0, 1);
-      const e = easeInOutCubic(k);
-      introScene.camZ = TRAVEL * e;
-      // la cámara empieza mirando al techo y termina de frente a la pared
-      o.pitch = lerp(0.3, 0.09, smooth(clamp((k - 0.15) / 0.85, 0, 1)));
-      // leve movimiento de grúa, como una toma con steadicam
-      introScene.camX = Math.sin(k * Math.PI) * 0.35;
-      // la pared recibe luz cuando se encienden los tubos del fondo
-      o.wall.lit = easeOutCubic(clamp((t - 1.5) / 1.6, 0, 1));
-      if (!creditShown && t > T.credit) { creditShown = true; intro.classList.add("show-credit"); }
-      // fundido a negro antes de salir
-      fade.style.opacity = clamp((t - (T.leave - 0.9)) / 0.9, 0, 1).toFixed(3);
+      if (t < T.lightsEnd) {
+        o.speed = 0.6; o.pitch = 0.22; o.trail = 0;
+      } else if (t < T.accelEnd) {
+        const k = (t - T.lightsEnd) / (T.accelEnd - T.lightsEnd);
+        const e = k * k * k;
+        o.speed = lerp(0.6, 36, e);
+        o.pitch = lerp(0.22, 0.62, easeInOutCubic(k));
+        o.fov = lerp(0.95, 0.55, e);
+        o.trail = lerp(0, 0.5, e);
+        introScene.roll = Math.sin(k * Math.PI) * 0.06;
+      } else {
+        // tras el destello: el techo sigue de fondo, muy tenue
+        o.speed = lerp(o.speed, 1.2, 0.06);
+        o.pitch = lerp(o.pitch, 0.34, 0.05);
+        o.fov = lerp(o.fov, 0.9, 0.05);
+        o.trail = 0;
+        introScene.roll = 0;
+        o.intensity = lerp(o.intensity, 0.2, 0.14);
+      }
+      // destello blanco al "atravesar" el fondo
+      let fl = 0;
+      if (t > T.flash - 0.35 && t < T.flash) fl = (t - (T.flash - 0.35)) / 0.35;
+      else if (t >= T.flash) fl = Math.max(0, 1 - (t - T.flash) / 0.7);
+      flash.style.opacity = (fl * fl).toFixed(3);
+      if (!logoShown && t > T.logo) { logoShown = true; intro.classList.add("show-logo"); }
       if (t > T.leave) finishIntro(false);
     };
     introScene.start();
