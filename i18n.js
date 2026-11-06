@@ -92,7 +92,7 @@
 
   function load(code) {
     if (cache[code]) return Promise.resolve(cache[code]);
-    return fetch("i18n/" + code + ".json").then(r => r.ok ? r.json() : {}).catch(() => ({}))
+    return fetch("/i18n/" + code + ".json").then(r => r.ok ? r.json() : {}).catch(() => ({}))
       .then(d => (cache[code] = d));
   }
 

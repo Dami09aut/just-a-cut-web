@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Página no encontrada · Just A Cut</title>
+  <meta name="description" content="Esta página no existe. Vuelve al inicio de Just A Cut o reserva tu cita online.">
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#000000">
+  <script src="/i18n.js"></script>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;800;900&family=Instrument+Serif:ital@0;1&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    /* ---------- Página 404 ---------- */
+    .e404-page { min-height: 100vh; min-height: 100svh; display: flex; flex-direction: column; }
+    .e404-page .legal-nav { top: 0; }
+    .e404 {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 8px var(--gutter) clamp(24px, 4vh, 48px); text-align: center; position: relative; isolation: isolate;
+      background:
+        radial-gradient(ellipse 60% 45% at 50% 34%, rgba(255,255,255,.07), transparent 70%),
+        radial-gradient(ellipse 120% 80% at 50% 120%, #0d0d0d, #000 60%);
+    }
+
+    /* el letrero: 4 · logo en un círculo · 4, como el neón de la portada */
+    .e404-stage {
+      position: relative; width: min(100%, 980px); height: clamp(220px, 40vh, 440px);
+      display: grid; place-items: center; touch-action: none; user-select: none; -webkit-user-select: none;
+    }
+    .e404-sign {
+      position: relative; z-index: 1; display: inline-flex; align-items: center; gap: .06em; direction: ltr;
+      font-size: min(27vw, 33vh, 280px); line-height: 1;
+      filter: drop-shadow(0 0 .1em rgba(255,255,255,.22));
+      transition: filter .6s var(--ease);
+    }
+    .e404-digit {
+      font-family: var(--display); font-weight: 900; line-height: .78; color: #fafafa;
+      text-shadow: 0.006em 0.007em 0 #a0a0a0, 0.012em 0.015em 0 #8a8a8a, 0.018em 0.022em 0 #7b7b7b, 0.024em 0.030em 0 #6d6d6d, 0.030em 0.037em 0 #606060, 0.036em 0.045em 0 #545454, 0.042em 0.052em 0 #474747, 0.048em 0.060em 0 #3a3a3a, 0.054em 0.068em 0 #2b2b2b;
+      animation: neonHum 8s 1s infinite;
+    }
+    .e404-zero { width: .86em; height: .86em; display: block; overflow: visible; translate: 0 .02em; }
+    .e404-zero svg { width: 100%; height: 100%; overflow: visible; display: block; }
+    /* el tubo del medio está "fundido": parpadea hasta que lo despejas */
+    .e404-zero .z-face { animation: tubeFail 4.2s steps(1, end) infinite; }
+    @keyframes tubeFail {
+      0%, 100% { opacity: 1; } 8% { opacity: .15; } 10% { opacity: 1; } 12% { opacity: .08; } 14% { opacity: .9; }
+      47% { opacity: 1; } 48% { opacity: .25; } 50% { opacity: 1; } 71% { opacity: 1; } 72% { opacity: .05; } 77% { opacity: .05; } 78% { opacity: 1; }
+    }
+    .e404-halo {
+      position: absolute; inset: 8% 4%; z-index: 0; pointer-events: none;
+      background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(255,255,255,.12), rgba(255,255,255,.03) 50%, transparent 72%);
+      opacity: .55; transition: opacity .8s var(--ease);
+    }
+    .e404.is-fixed .e404-zero .z-face { animation: none; opacity: 1; }
+    .e404.is-fixed .e404-sign { filter: drop-shadow(0 0 .08em rgba(255,255,255,.5)) drop-shadow(0 0 .3em rgba(255,255,255,.18)); }
+    .e404.is-fixed .e404-halo { opacity: 1; }
+    .e404-sign.is-jolt { animation: jolt .32s cubic-bezier(.3,0,.2,1); }
+    @keyframes jolt { 0% { transform: none; } 30% { transform: translate(-.01em, .006em) rotate(-.6deg); } 60% { transform: translate(.008em, -.004em) rotate(.4deg); } 100% { transform: none; } }
+
+    /* montón de pelo encima del letrero: se corta con la máquina (o el dedo) */
+    .e404-hair, .e404-fall { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; pointer-events: none; }
+    .e404-hair {
+      -webkit-mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%);
+      mask-image: radial-gradient(ellipse 50% 50% at 50% 50%, #000 62%, transparent 100%);
+    }
+    .e404-fall { z-index: 3; }
+    .e404-stage.is-clipping { cursor: none; }
+
+    .e404-copy { position: relative; z-index: 4; max-width: 640px; margin-top: clamp(4px, 2vh, 20px); }
+    .e404-copy .eyebrow { justify-content: center; margin-bottom: 14px; }
+    .e404-copy .eyebrow::after { content: ""; width: 28px; height: 1px; background: currentColor; }
+    .e404-title { margin: 0 0 14px; font-size: clamp(44px, 7vw, 84px); }
+    .e404-text { margin: 0 auto 26px; max-width: 520px; color: var(--muted); font-size: 16px; }
+    .e404-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+
+    .e404-game {
+      display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px 18px;
+      margin-top: 22px; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: #8a8a8a;
+    }
+    .e404-hint { display: inline-flex; align-items: center; gap: 10px; }
+    .e404-hint svg { flex: none; }
+    .e404-done { display: none; color: #fff; }
+    .e404.is-fixed .e404-hint-txt { display: none; }
+    .e404.is-fixed .e404-done { display: inline; }
+    .e404-meter { display: inline-flex; align-items: center; gap: 10px; }
+    .e404-meter b { font-family: var(--display); font-size: 18px; letter-spacing: .04em; color: #fff; font-weight: 800; min-width: 3.2ch; text-align: right; }
+    .e404-bar { width: 90px; height: 1px; background: rgba(255,255,255,.2); position: relative; overflow: hidden; }
+    .e404-bar i { position: absolute; inset: 0; background: #fff; transform: scaleX(0); transform-origin: left; transition: transform .2s; }
+    [dir="rtl"] .e404-bar i { transform-origin: right; }
+    .e404-again {
+      background: none; border: 0; padding: 4px 0; color: #fff; font: inherit; letter-spacing: inherit; text-transform: inherit;
+      cursor: pointer; border-bottom: 1px solid rgba(255,255,255,.35);
+    }
+    .e404-again:hover { border-color: #fff; }
+
+    .e404-clipper { position: fixed; left: 0; top: 0; z-index: 310; pointer-events: none; opacity: 0; transition: opacity .2s; will-change: transform; }
+    .e404-clipper svg { display: block; translate: -23px -2px; rotate: -18deg; transform-origin: 23px 2px; filter: drop-shadow(0 8px 14px rgba(0,0,0,.7)); }
+    .e404-clipper.is-on { opacity: 1; }
+    .e404-clipper.is-buzz svg { animation: buzz .07s linear infinite; }
+    @media (hover: none) { .e404-clipper { display: none; } }
+
+    @media (max-width: 700px) {
+      .e404-stage { height: clamp(190px, 34vh, 300px); }
+      .e404-sign { font-size: 30vw; }
+      .e404-text { font-size: 15px; margin-bottom: 22px; }
+      .e404-actions .btn { flex: 1 1 160px; }
+      .e404-game { margin-top: 20px; }
+      .e404-hint { text-align: center; }
+      .e404-hint svg { display: none; }
+    }
+    @media (max-height: 640px) and (min-width: 701px) { .e404-stage { height: 38vh; } .e404-sign { font-size: min(27vw, 34vh); } }
+    @media (prefers-reduced-motion: reduce) {
+      .e404-zero .z-face, .e404-digit { animation: none !important; }
+    }
+  </style>
+</head>
+<body class="e404-page is-ready">
+  <header class="nav is-scrolled legal-nav">
+    <a href="/" class="nav-brand" aria-label="Just A Cut, inicio"><img src="/assets/logo.svg" alt="" width="30" height="30"><span>JUST A CUT</span></a>
+    <span class="legal-actions"><span data-lang-slot></span><a href="/" class="btn btn-ghost legal-back">← Volver a la web</a></span>
+  </header>
+
+  <main class="e404" id="e404">
+    <div class="e404-stage" id="e404-stage">
+      <span class="e404-halo" aria-hidden="true"></span>
+      <div class="e404-sign" id="e404-sign" role="img" aria-label="Error 404">
+        <span class="e404-digit" aria-hidden="true">4</span>
+        <span class="e404-zero" aria-hidden="true">
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <g id="z">
+                <circle cx="50" cy="50" r="45" fill="none" stroke-width="7.5"/>
+                <g transform="translate(50 52) scale(.74) translate(-50 -50)">
+                  <path d="M50 11.43 L74.16 52.74 L66.3 57.69 L50 29.93 L33.7 57.69 L25.84 52.74Z"/>
+                  <path d="M50 70.28 L75.77 55.76 L87.6 76.41 L67.59 88.57 L63.07 81.15 L75.12 73.4 L72.22 68.67 L50 81.04 L27.78 68.67 L24.88 73.4 L36.93 81.15 L32.41 88.57 L12.4 76.41 L24.23 55.76Z"/>
+                </g>
+              </g>
+            </defs>
+            <use href="#z" transform="translate(4.6 5.8)" fill="#2b2b2b" stroke="#2b2b2b"/>
+            <use href="#z" transform="translate(3.6 4.5)" fill="#474747" stroke="#474747"/>
+            <use href="#z" transform="translate(2.6 3.3)" fill="#606060" stroke="#606060"/>
+            <use href="#z" transform="translate(1.6 2.0)" fill="#7b7b7b" stroke="#7b7b7b"/>
+            <use href="#z" transform="translate(.7 .9)" fill="#a0a0a0" stroke="#a0a0a0"/>
+            <use href="#z" class="z-face" fill="#fafafa" stroke="#fafafa"/>
+          </svg>
+        </span>
+        <span class="e404-digit" aria-hidden="true">4</span>
+      </div>
+      <canvas class="e404-hair" id="e404-hair" aria-hidden="true"></canvas>
+      <canvas class="e404-fall" id="e404-fall" aria-hidden="true"></canvas>
+    </div>
+
+    <div class="e404-copy">
+      <p class="eyebrow">Error 404 · Página no encontrada</p>
+      <h1 class="h2 h2-mix e404-title"><span class="t-caps">Este corte</span> <em class="t-serif">no existe.</em></h1>
+      <p class="e404-text">La página que buscas se ha ido con el último cliente. Puede que el enlace esté mal escrito o que la hayamos movido.</p>
+      <div class="e404-actions">
+        <a href="/" class="btn btn-solid">Volver al inicio</a>
+        <a href="https://cut.yeasyapp.com/LoAVEZ" target="_blank" rel="noopener" class="btn btn-ghost">Reservar cita <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="e404-game" id="e404-game" hidden>
+        <span class="e404-hint">
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 3h12v4H6zM7 7h10l-1 5v8a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-8z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <span class="e404-hint-txt">Pasa la máquina (o el dedo) por el pelo para encontrar el error</span>
+          <span class="e404-done">Corte perfecto. Ahora te toca a ti.</span>
+        </span>
+        <span class="e404-meter"><span>Recortado</span> <b id="e404-val">0%</b><span class="e404-bar"><i id="e404-bar"></i></span></span>
+        <button type="button" class="e404-again" id="e404-again">Otra vez</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- máquina de cortar que sigue al cursor -->
+  <div class="e404-clipper" id="e404-clipper" aria-hidden="true">
+    <svg viewBox="0 0 64 120" width="46" height="86">
+      <g fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round">
+        <path d="M10 6 h44 v10 h-44z" fill="#111"/>
+        <path d="M12 6 v-4 M18 6 v-4 M24 6 v-4 M30 6 v-4 M36 6 v-4 M42 6 v-4 M48 6 v-4 M52 6 v-4" stroke-width="1.6"/>
+        <path d="M8 16 h48 l-4 22 q-2 6 -2 14 v52 q0 12 -12 12 h-12 q-12 0 -12 -12 v-52 q0 -8 -2 -14z" fill="#0c0c0c"/>
+        <path d="M24 48 h16 v26 h-16z" fill="#1c1c1c"/>
+        <path d="M32 54 v14" stroke-width="3" stroke-linecap="round"/>
+        <path d="M22 88 h20 M22 94 h20 M22 100 h20" stroke-width="1.4" opacity=".6"/>
+      </g>
+      <path d="M26 24 l6 -6 l6 6" fill="none" stroke="#fff" stroke-width="2"/>
+    </svg>
+  </div>
+
+  <script src="/404.js"></script>
+</body>
+</html>
